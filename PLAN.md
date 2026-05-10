@@ -97,6 +97,7 @@ From the prompt + clarifications gathered before this plan was written:
 - **Messaging**: `@webext-core/messaging` (when needed; not Step 1)
 - **Cross-browser manifest**: rely on WXT's auto MV3→MV2 conversion + `import.meta.env.FIREFOX` for runtime branches
 - **Style**: plain CSS for now; revisit if it gets unwieldy
+- **Formatter/linter**: Biome 2.4.13 (`biome.json`). `.svelte` covered partially via `html.experimentalFullSupportEnabled`; revisit if Svelte-aware tooling becomes necessary.
 - **Testing**: vitest (WxtVitest plugin) for pure logic when introduced; Playwright e2e considered after Step 4 if it's worth the time investment
 
 ---
@@ -122,9 +123,10 @@ Each step has: **Goal**, **Tasks**, **Verify**, **Output**, **Feedback checkpoin
 
 **Feedback checkpoint**: agree the slate is clean before Step 1.
 
-**Open questions**:
-- Formatter choice (prettier vs biome vs none)?
-- Keep `popup` entrypoint at all? The design says popup is minimized to "enabled toggle + open settings" — we may want to keep it as a stub or delete entirely until later.
+**Decisions made in Step 0**:
+- Formatter: Biome 2.4.13 (config mirrored from `typfill`, with `.output`, `.wxt`, and `.claude/settings.local.json` excluded). Scripts: `format`, `check`, `check:write`.
+- Popup: entrypoint deleted entirely. Re-introduce only when there's a concrete need (current design minimizes popup to toggle + settings link, which can come later).
+- WXT auto-converts MV3 → MV2 cleanly for Firefox; no manual manifest branching required at this stage.
 
 ---
 
@@ -304,6 +306,7 @@ Open questions that we should validate when they become relevant — not all at 
 - IME / composition events — should `keydown` be ignored while `isComposing`?
 - Keyboard layout sensitivity: `event.code` vs `event.key` policy. Re-read Vimium `keyboard_utils.js` when this matters.
 - Per-site `optional_permissions` — needed for Google? GitHub? Probably for some, not all.
+- Firefox AMO requires `data_collection_permissions` for new extensions submitted on/after 2025-11-03 (warned by `wxt build -b firefox`). Configure in `wxt.config.ts` before AMO submission; not blocking until distribution prep.
 
 ---
 
@@ -312,10 +315,10 @@ Open questions that we should validate when they become relevant — not all at 
 Between every step:
 
 1. Append a short notes file at `docs/dev/step-NN-notes.md` recording: what was tried, what worked, what surprised. Keep it terse.
-2. Update this `PLAN.md` (revise upcoming steps if learnings demand it). Commit the plan update separately from code so the rationale is visible in git.
+2. Update this `PLAN.md` (revise upcoming steps if learnings demand it).
 3. User reviews before next step starts. Claude does not start the next step automatically.
 
-Commits within a step: small and focused; squash if the step ends up rewriting itself.
+Commit style at this stage: one commit per step is fine — message like `feat: done step N`. Don't try to carve "meaningful" sub-commits at this early stage; it's not worth the effort.
 
 ---
 
