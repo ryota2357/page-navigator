@@ -209,27 +209,69 @@ Each step has: **Goal**, **Tasks**, **Verify**, **Output**, **Feedback checkpoin
 
 **Feedback checkpoint**: User reviews the design doc. We iterate on it before Step 3 begins. This is where Claude's job is to lay out trade-offs clearly, not pick winners alone.
 
-**Open questions**:
-- Do we want a separate "compiled" representation distinct from the storage representation, or is one shape sufficient?
-- Should `options` carry per-action defaults at storage time, or be filled in at compile time from the action's schema?
+**Open questions** *(resolved in Step 2 — see decisions below)*:
+- ~~Do we want a separate "compiled" representation distinct from the storage representation, or is one shape sufficient?~~ Compiled trie at load time; storage and runtime share one `Binding<O>` shape (§4.1, §3.1).
+- ~~Should `options` carry per-action defaults at storage time, or be filled in at compile time from the action's schema?~~ Storage is always **resolved** (full options); load-time write-back fills in any new defaults from schema evolution (§5.3 C案).
+
+**Decisions made in Step 2** (full reasoning + trade-offs in `docs/dev/step-02-data-model.md`):
+
+- **KeyToken**: string canonical (`"j"`, `"<C-j>"`, `"<S-ArrowDown>"`); modifier letters uppercase, key names UpperCamelCase (DOM-aligned), modifier order alphabetical `A-C-M-S`. Parser is case-insensitive inside `<…>` so imports survive case mismatch; serializer always emits canonical.
+- **Layout policy**: `event.key` always for v1; `event.code`-based opt-in deferred.
+- **Sequence shape**: array `KeyToken[]` (not space-separated string). Display form is the only place strings appear.
+- **Shift handling**: bare printable + Shift folds into the printable's case (`Shift+j` → `J`). Printable + Shift + another modifier keeps `<S->` and lowercases the printable (`Ctrl+Shift+j` → `<C-S-j>`); non-printable + Shift keeps `<S->` (`<S-Tab>`). Parser inside `<…>` is case- and order-insensitive (`<C-J>` = `<c-j>` = Ctrl+j; explicit `<C-S-j>` required for Ctrl+Shift+j).
+- **IME guard**: `event.isComposing || event.keyCode === 229` (both — Safari `isComposing` bug requires the legacy fallback). Lint suppression for `keyCode` deprecation, with comment back to §1.5.
+- **Options validator**: `@core/unknownutil` (jsr `4.4.0-pre.1`). Each action declares 3 small artifacts: `pred` (predicate / type source) + `defaults` + `meta` (UI hint). Range constraints live in `meta` and are enforced by a `clampOptions()` helper at storage load. pnpm handles JSR natively (`"jsr:4.4.0-pre.1"` in package.json, same idiom as `~/ghq/github.com/ryota2357/typfill`).
+- **Action file layout**: per-scope colocation (`actions/global/*`, `services/<id>/actions.ts`).
+- **Binding shape**: `{ id (UUID), scope, triggers: Trigger[], actionId, options: O, enabled }`. One scope per binding. Storage and runtime share the same shape — no `StoredBinding` / `Binding` split.
+- **Storage layout**: single flat `Binding[]` at `local:bindings`; if/when this hurts, do **not** shard by `scope` (would be partitioning storage by a row field). Settings live separately at `local:settings`.
+- **Storage area**: `local:` for Step 3; sync migration deferred to a later step.
+- **Schema evolution**: load-time write-back (§5.3 C案). Loader projects onto current `defaults` keys, fills missing, clamps numerics, validates with predicate, drops corrupt rows, writes back if any repair happened (key set change OR clamp value change). The same code path is intentionally also the import code path.
+- **Dispatcher**: compiled trie at load time; conflicts logged + dropped (don't fire); cross-scope is shadowing (site wins over global), not conflict.
+- **Sequence timeout**: user-configurable global setting, default 1000ms, clamped to 100–60000ms at load. Stored in `local:settings`.
+- **Messaging**: `@webext-core/messaging` introduced when the first background action lands; `storage.watch()` covers all push-direction needs until then.
+
+**Security observations identified at design time** (§10 of design doc, S1–S5 mandatory for Step 3):
+- **S1**: gate listener on `event.isTrusted === true` (page can `dispatchEvent` synthetic key events).
+- **S2**: `isEditable()` walks open shadow roots via `deepActiveElement()`; closed-shadow false-negative documented.
+- **S3**: treat `<iframe>` as activeElement as "editable / do not fire" (top-frame only; relaxes when `allFrames: true` arrives).
+- **S4**: load == repair == import code path; harden against poisoned storage (re-validate, regenerate UUIDs on import, drop unknown actionId, range-clamp, strip extras).
+- **S5**: pin `world: "ISOLATED"` explicitly (don't rely on default).
+- **S6–S10**: forward-looking notes (no raw `KeyToken` in logs, sync privacy, `preventDefault` minimality, RPC sender re-validation, no dynamic predicate construction).
 
 ---
 
 ### Step 3 — Minimal dispatcher with storage (Global only, no UI)
 
-**Goal**: Implement the data model from Step 2 as a small library and wire it into the content script. Bindings are stored in `wxt/storage`; for now they're seeded from a hardcoded default and modifiable only via devtools / a one-shot script. **No options UI yet.**
+**Goal**: Implement the data model from Step 2 as a small library and wire it into the content script. Bindings are stored in `wxt/storage`; for the duration of Step 3 they're modifiable only via devtools / a one-shot script. **No options UI yet.**
 
-**Tasks**:
-- Implement key normalization module + unit tests (vitest, WxtVitest plugin).
-- Implement action registry with ~5 scroll actions (`scrollDown`, `scrollUp`, `scrollPageDown`, `scrollPageUp`, `scrollToTop`).
-- Implement binding store with `storage.defineItem('local:bindings', { version: 1, fallback: <default seed> })`.
-- Implement dispatcher: subscribe to storage; on change rebuild key trie; on `keydown` walk the trie.
+**Tasks** *(updated post-Step-2 decisions; refer to `docs/dev/step-02-data-model.md` for the full rationale)*:
+
+- Add `@core/unknownutil` (`"jsr:4.4.0-pre.1"`) to `package.json`.
+- **Key normalization module** + unit tests (vitest, WxtVitest plugin):
+  - Canonical serializer (`A-C-M-S` order, UpperCamel inside `<…>`, Shift-folding into printable, non-printable Shift wrapping).
+  - Lenient parser (case-insensitive inside `<…>`).
+  - IME guard: `event.isComposing || event.keyCode === 229` (with a single biome-ignore line referencing §1.5).
+- **Listener-side security gates** (§10 S1–S5):
+  - Pin `world: "ISOLATED"` explicitly on `defineContentScript`.
+  - Drop events with `event.isTrusted === false`.
+  - `deepActiveElement()` walks open shadow roots; treat `<iframe>` as non-firable.
+- **Action registry** with ~5 scroll actions (`scroll.down`, `scroll.up`, `scroll.pageDown`, `scroll.pageUp`, `scroll.toTop`). Each declares `{ pred, defaults, meta }` per §2.2; `clampOptions(opts, meta)` helper colocated with the loader.
+- **Storage**: `storage.defineItem('local:bindings', { fallback: [], version: 1, migrations: {} })` and `storage.defineItem('local:settings', { fallback: { sequenceTimeoutMs: 1000 }, version: 1, migrations: {} })`. Empty fallback for bindings — no default keymap concept.
+- **Loader** (`loadBindings()`, `loadSettings()`) per §5.3 C案: project onto current keys → clamp → predicate → drop or repair → write-back if changed.
+- **Compiled-trie dispatcher**: build trie from loaded bindings; on `keydown` walk trie; honor sequence timeout from `local:settings`; conflict policy = log + don't fire; `preventDefault` only on leaf-fire (§10 S8).
+- **Watchers**: `bindingsItem.watch(rebuildTrie)` and `settingsItem.watch(updateTimeout)` (separate so binding changes don't reset timer state and vice-versa).
+- **Logging discipline** (§10 S6): log `bindingId` / `actionId` / `scope` / depth / timing; never `KeyToken` content.
 - Replace the hardcoded `if` ladder from Step 1.
-- Edit-via-devtools sanity check: change a binding through the storage area, confirm content script picks it up live.
+- Edit-via-devtools sanity check: add a binding via `chrome.storage.local`, confirm the content script picks it up live without reload.
 
-**Verify**: same manual walk-through as Step 1 plus: change a binding in Chrome devtools `chrome.storage.local`, verify it takes effect on next keypress without reload.
+**Verify**: same manual walk-through as Step 1, plus:
+- Add a binding via Chrome devtools `chrome.storage.local`, verify it takes effect without reload.
+- Synthetic `dispatchEvent(new KeyboardEvent("keydown", {key:"j"}))` from page console does **not** trigger any action (S1).
+- Focus inside an open-shadow-DOM `<input>` does **not** trigger bindings (S2). Spec a small test page with a `<custom-element>` containing `mode: "open"` shadow root + input for this.
+- Focus in an iframe does **not** trigger bindings (S3).
+- Set `local:settings.sequenceTimeoutMs` to `-1` via devtools → loader clamps it to 100 and writes back.
 
-**Output**: `src/lib/` modules for normalize/registry/store/dispatcher. Unit tests for normalize + dispatcher trie. `docs/dev/step-03-notes.md` recording where the design held up and where it had to bend.
+**Output**: `src/lib/` modules for normalize / registry / store / loader / dispatcher. Unit tests for normalize, loader (project/clamp/repair), and dispatcher trie. `docs/dev/step-03-notes.md` recording where the design held up and where it had to bend.
 
 **Feedback checkpoint**: data model survived contact with code. Update Step 2 doc with corrections. Decide on Step 4 details.
 
