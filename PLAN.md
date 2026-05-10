@@ -275,6 +275,20 @@ Each step has: **Goal**, **Tasks**, **Verify**, **Output**, **Feedback checkpoin
 
 **Feedback checkpoint**: data model survived contact with code. Update Step 2 doc with corrections. Decide on Step 4 details.
 
+**Decisions made in Step 3** (full notes in `docs/dev/step-03-notes.md`):
+
+- Module layout: nested under `src/lib/{keys,actions,storage,dispatcher}/`. Tests colocated (`keys.test.ts`, `loader.test.ts`, `dispatcher.test.ts`).
+- Test setup: full WxtVitest + happy-dom + `wxt/testing/fake-browser`. 51 tests passing across keys / loader / dispatcher.
+- Settings repair tweak: `Number.isNaN` (not `!Number.isFinite`) gates the fallback path, so `+Infinity` clamps to MAX rather than collapsing to default. Matches the design intent of "nearest in-range value" for the unbounded sentinels.
+- Parser tightened: multi-character key names inside `<…>` must hit the canonical-name table. Catches `<C->` (regex backtrack quirk) instead of letting it through.
+- `clampOptions` typing: switched from stepwise mutation to `Math.min(Math.max(...))` to satisfy the `O[keyof O] & number` constraint without an `as` cast.
+- `world: ISOLATED` pinned explicitly on `defineContentScript` (S5).
+- `manifest.permissions: ["storage"]` declared explicitly in `wxt.config.ts`. WXT 0.20.25 did not auto-add it from `wxt/utils/storage` usage; without it MV3 silently failed every read/write.
+
+**Detours in Step 3** (out of scope, but happened):
+
+- A throwaway popup (`src/entrypoints/popup/`) was added so the manual checklist could be exercised without `chrome.storage.local.set`. It will be replaced wholesale by Step 4's options page; the logic (`parseTrigger`, `bindingsItem`, `listActions()`) is reusable.
+
 ---
 
 ### Step 4 — Minimal options page (Global only)
@@ -297,8 +311,8 @@ Each step has: **Goal**, **Tasks**, **Verify**, **Output**, **Feedback checkpoin
 **Feedback checkpoint**: review the options-page architecture. Decide: how much polish before introducing site-specific scope?
 
 **Open questions**:
-- The mock uses tag-style trigger input with auto key-capture. Is that the right interaction at this stage, or do we start with a text input and parse?
-- Where does the options page live in the manifest — `chrome://extensions` "Options" link, browser toolbar icon, both?
+- The mock uses tag-style trigger input with auto key-capture. Is that the right interaction at this stage, or do we start with a text input and parse? (The throwaway Step-3 popup uses text-input-and-parse — proven to work, but probably not the long-term UX.)
+- Where does the options page live in the manifest — `chrome://extensions` "Options" link, browser toolbar icon, both? (The throwaway popup currently occupies the toolbar icon slot via `default_popup`. Decide whether to keep that wiring and replace the popup contents, or move to a full options page and free the toolbar slot.)
 
 ---
 
