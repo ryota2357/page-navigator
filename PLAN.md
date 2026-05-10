@@ -160,6 +160,13 @@ Each step has: **Goal**, **Tasks**, **Verify**, **Output**, **Feedback checkpoin
 - Should the content script be `all_frames: true` from the start, or top-frame only? (Vimium uses all_frames; we may want to defer.)
 - Do we want to keep the hardcoded code as a "smoke test" file separate from the real content script later?
 
+**Decisions made in Step 1**:
+- Frame scope: **top-frame only** (`all_frames: false`). iframe behavior deferred to Step 2 (data model) and beyond.
+- Smoke-test file separation: kept hardcoded code directly in `content.ts`; revisit in Step 3 when the real dispatcher replaces it.
+- Modifier-key handling at the listener boundary is intentionally crude (filter when `ctrl`/`meta`/`alt` held). Step 2 key-normalization design owns the real policy (`<c-j>` etc.).
+- IME / `event.isComposing` and layout policy (`event.key` vs `event.code`) are **not** addressed in Step 1 — they're Step 2 design topics.
+- Cross-browser parity confirmed: WXT's auto MV3→MV2 conversion + dedicated dev profiles per browser mean no manual branching was needed. No browser-specific quirks observed at this layer.
+
 ---
 
 ### Step 2 — Internal data model design (spike, no production code)
