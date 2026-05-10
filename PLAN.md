@@ -297,7 +297,7 @@ Each step has: **Goal**, **Tasks**, **Verify**, **Output**, **Feedback checkpoin
 
 **Tasks**:
 - Define the options entrypoint: `src/entrypoints/options/index.html` + Svelte app (see WXT `entrypoints.md`).
-- Open-in-tab mode (`<meta name="manifest.options_ui.open_in_tab" content="true" />`) so it's a full page, not a popup.
+- Open-in-tab mode (`<meta name="manifest.open_in_tab" content="true">` — WXT wraps it under `options_ui` automatically) so it's a full page, not a popup.
 - List view: each row = `triggers | action | options`.
 - Add binding: action picker = simple `<select>` with the ~5 actions (no fuzzy search yet — that's part of the deferred polish).
 - Trigger input: tag-style multi-key input (the smallest version that works; capture key, render token, allow remove).
@@ -310,9 +310,19 @@ Each step has: **Goal**, **Tasks**, **Verify**, **Output**, **Feedback checkpoin
 
 **Feedback checkpoint**: review the options-page architecture. Decide: how much polish before introducing site-specific scope?
 
-**Open questions**:
-- The mock uses tag-style trigger input with auto key-capture. Is that the right interaction at this stage, or do we start with a text input and parse? (The throwaway Step-3 popup uses text-input-and-parse — proven to work, but probably not the long-term UX.)
-- Where does the options page live in the manifest — `chrome://extensions` "Options" link, browser toolbar icon, both? (The throwaway popup currently occupies the toolbar icon slot via `default_popup`. Decide whether to keep that wiring and replace the popup contents, or move to a full options page and free the toolbar slot.)
+**Decisions made in Step 4** (full notes in `docs/dev/step-04-notes.md`):
+
+- **Trigger UX**: tag-style with key capture. Each tag is one `Trigger` (`KeyToken[]`); `+ Add` enters capture mode; keys accumulate via `normalize()`; ✓ / Enter commits, ✗ / Escape / click-outside cancels. Multi-key sequences supported per tag. Limitation: binding plain Enter / Escape via this UI is not exposed (storage edits still work; loader canonicalises).
+- **Manifest placement**: `options_ui.open_in_tab=true` only. Throwaway popup deleted; toolbar icon left empty. Step 6+ "popup minimization" can re-introduce a popup later.
+- **Auto-save** (no explicit Save button). Each mutation does a read-modify-write off `bindingsItem.getValue()`, sets it back, and updates local state synchronously (Step 3 popup-detour rationale still holds — the writer's own watch doesn't fire reliably).
+- **Sidebar shape**: scope list with label + binding count; Global only today, structure already accommodates `site:*` for Step 5.
+- **Action picker**: plain `<select>`, filtered by `isCompatibleScope(action.scope, binding.scope)`. Same predicate Step 5 will reuse / relax.
+- **Options form**: generated from `action.options.meta`; resets to defaults on action change.
+- **WXT meta name correction**: `manifest.open_in_tab` (not `manifest.options_ui.open_in_tab` as the original task list sketched). PLAN §4 task list updated above.
+
+**Step-4 quirks to remember** (Biome + Svelte CSS):
+- `scope=` on a Svelte component is misread by Biome's a11y rule as the HTML `scope` attribute; rename the prop instead of suppressing.
+- `:global(...)` accepts one selector; split `html, body` into two.
 
 ---
 
