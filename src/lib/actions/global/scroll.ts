@@ -6,7 +6,7 @@ import type { Action } from "../../types";
 //   defaults: full options bag, typed against pred
 //   meta:     UI hints — drives the form generator AND range-clamp at load
 
-// --- scroll.down / scroll.up --------------------------------------------
+// --- scrollDown / scrollUp ----------------------------------------------
 
 const scrollByPred = is.ObjectOf({
   amount: is.Number,
@@ -25,8 +25,7 @@ const scrollByMeta = {
 };
 
 const scrollDown: Action<ScrollByOptions> = {
-  id: "scroll.down",
-  label: "Scroll down",
+  id: "scrollDown",
   description: "Scroll down by a fixed amount.",
   scope: "global",
   runtime: "content",
@@ -44,8 +43,7 @@ const scrollDown: Action<ScrollByOptions> = {
 };
 
 const scrollUp: Action<ScrollByOptions> = {
-  id: "scroll.up",
-  label: "Scroll up",
+  id: "scrollUp",
   description: "Scroll up by a fixed amount.",
   scope: "global",
   runtime: "content",
@@ -62,7 +60,7 @@ const scrollUp: Action<ScrollByOptions> = {
   },
 };
 
-// --- scroll.pageDown / scroll.pageUp ------------------------------------
+// --- scrollPageDown / scrollPageUp --------------------------------------
 
 const pageScrollPred = is.ObjectOf({
   fraction: is.Number,
@@ -82,8 +80,7 @@ const pageScrollMeta = {
 };
 
 const scrollPageDown: Action<PageScrollOptions> = {
-  id: "scroll.pageDown",
-  label: "Scroll page down",
+  id: "scrollPageDown",
   description: "Scroll down by a fraction of the viewport height.",
   scope: "global",
   runtime: "content",
@@ -101,8 +98,7 @@ const scrollPageDown: Action<PageScrollOptions> = {
 };
 
 const scrollPageUp: Action<PageScrollOptions> = {
-  id: "scroll.pageUp",
-  label: "Scroll page up",
+  id: "scrollPageUp",
   description: "Scroll up by a fraction of the viewport height.",
   scope: "global",
   runtime: "content",
@@ -119,29 +115,51 @@ const scrollPageUp: Action<PageScrollOptions> = {
   },
 };
 
-// --- scroll.toTop -------------------------------------------------------
+// --- scrollToTop / scrollToBottom ---------------------------------------
 
-const toTopPred = is.ObjectOf({
+const toEdgePred = is.ObjectOf({
   smooth: is.Boolean,
 });
-type ToTopOptions = PredicateType<typeof toTopPred>;
+type ToEdgeOptions = PredicateType<typeof toEdgePred>;
 
-const scrollToTop: Action<ToTopOptions> = {
-  id: "scroll.toTop",
-  label: "Scroll to top",
+const toEdgeMeta = {
+  smooth: { kind: "boolean" as const, label: "Smooth scroll" },
+};
+
+const scrollToTop: Action<ToEdgeOptions> = {
+  id: "scrollToTop",
   description: "Jump to the very top of the page.",
   scope: "global",
   runtime: "content",
   options: {
-    pred: toTopPred,
+    pred: toEdgePred,
     defaults: { smooth: false },
-    meta: {
-      smooth: { kind: "boolean", label: "Smooth scroll" },
-    },
+    meta: toEdgeMeta,
   },
   run: (_ctx, opts) => {
     window.scrollTo({
       top: 0,
+      behavior: opts.smooth ? "smooth" : "auto",
+    });
+  },
+};
+
+const scrollToBottom: Action<ToEdgeOptions> = {
+  id: "scrollToBottom",
+  description: "Jump to the very bottom of the page.",
+  scope: "global",
+  runtime: "content",
+  options: {
+    pred: toEdgePred,
+    defaults: { smooth: false },
+    meta: toEdgeMeta,
+  },
+  run: (_ctx, opts) => {
+    // document.documentElement.scrollHeight covers both quirks-mode and
+    // standards-mode roots; window.scrollTo with a number past the max is
+    // clamped by the browser, so no need to measure first.
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
       behavior: opts.smooth ? "smooth" : "auto",
     });
   },
@@ -154,4 +172,5 @@ export const scrollActions: ReadonlyArray<Action<any>> = [
   scrollPageDown,
   scrollPageUp,
   scrollToTop,
+  scrollToBottom,
 ];

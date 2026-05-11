@@ -12,7 +12,7 @@ function bind(
     id,
     scope,
     triggers,
-    actionId: opts.actionId ?? "scroll.down",
+    actionId: opts.actionId ?? "scrollDown",
     options: opts.options ?? {},
     enabled: opts.enabled ?? true,
   };
@@ -49,7 +49,7 @@ describe("selectBindingsForScope", () => {
 
   it("site exact-trigger shadows global", () => {
     const all = [
-      bind("g1", "global", [["j"]], { actionId: "scroll.down" }),
+      bind("g1", "global", [["j"]], { actionId: "scrollDown" }),
       bind("s1", "site:google", [["j"]], {
         actionId: "google.focusNextResult",
       }),

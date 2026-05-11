@@ -136,11 +136,12 @@
   }
   :global(body) {
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-      sans-serif;
+      YuGothic, "Yu Gothic", "ヒラギノ角ゴ ProN W3", "ＭＳ ゴシック", sans-serif;
     font-size: 13px;
     color: #1a1815;
-    background: #faf9f7;
+    background: #fbfaf8;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   :global(*) {
     box-sizing: border-box;

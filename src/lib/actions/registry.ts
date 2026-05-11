@@ -1,5 +1,6 @@
 import { googleActions } from "../services/google";
 import type { Action } from "../types";
+import { historyActions } from "./global/history";
 import { scrollActions } from "./global/scroll";
 
 // biome-ignore lint/suspicious/noExplicitAny: registry holds heterogeneous Action<O> entries
@@ -7,6 +8,7 @@ type AnyAction = Action<any>;
 
 const ALL_ACTIONS: ReadonlyArray<AnyAction> = [
   ...scrollActions,
+  ...historyActions,
   ...googleActions,
 ];
 

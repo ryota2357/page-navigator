@@ -47,7 +47,6 @@ export type ActionContext = {
 
 export type Action<O = unknown> = {
   id: string;
-  label: string;
   description?: string;
   scope: Scope;
   runtime: "content" | "background";

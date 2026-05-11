@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { actionDisplay } from "../../../lib/actions/display";
   import { getAction } from "../../../lib/actions/registry";
   import type { Action, Binding } from "../../../lib/types";
   import ActionPickerModal from "./ActionPickerModal.svelte";
@@ -14,6 +15,7 @@
   const { binding, onUpdate, onDelete }: Props = $props();
 
   const action = $derived(getAction(binding.actionId));
+  const display = $derived(action ? actionDisplay(action.id) : null);
 
   let pickerOpen = $state(false);
 
@@ -60,7 +62,14 @@
       }}
       title="Change action"
     >
-      <span class="action-label">{action?.label ?? "Pick an action…"}</span>
+      {#if display}
+        <span class="action-name">{display.name}</span>
+        {#if display.badge}
+          <span class="badge site">{display.badge.label}</span>
+        {/if}
+      {:else}
+        <span class="action-name placeholder">Pick an action…</span>
+      {/if}
       <span class="chev">▾</span>
     </button>
   </div>
@@ -145,12 +154,30 @@
     outline: 1px solid #1a1815;
     border-color: #1a1815;
   }
-  .action-label {
+  .action-name {
+    font-family: ui-monospace, Consolas, "Liberation Mono", monospace;
     font-size: 12px;
     color: #1a1815;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
+  }
+  .action-name.placeholder {
+    color: #8a857a;
+    font-family: inherit;
+  }
+  .badge.site {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    color: #6b21a8;
+    background: #f3ebfb;
+    border: 1px solid #e1d0f3;
+    padding: 1px 6px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
   }
   .chev {
     color: #8a857a;

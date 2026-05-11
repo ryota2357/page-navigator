@@ -44,7 +44,6 @@ const focusMeta = {
 
 const focusNextResult: Action<FocusOptions> = {
   id: "google.focusNextResult",
-  label: "Focus next result",
   description: "Move focus to the next search result.",
   scope: "site:google",
   runtime: "content",
@@ -58,7 +57,6 @@ const focusNextResult: Action<FocusOptions> = {
 
 const focusPrevResult: Action<FocusOptions> = {
   id: "google.focusPrevResult",
-  label: "Focus previous result",
   description: "Move focus to the previous search result.",
   scope: "site:google",
   runtime: "content",
@@ -77,7 +75,6 @@ type OpenOptions = PredicateType<typeof openPred>;
 
 const openResult: Action<OpenOptions> = {
   id: "google.openResult",
-  label: "Open focused result",
   description: "Activate the currently focused search result.",
   scope: "site:google",
   runtime: "content",
