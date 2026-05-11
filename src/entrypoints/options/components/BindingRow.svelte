@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { getAction, listActions } from "../../../lib/actions/registry";
-  import type { Binding, Scope } from "../../../lib/types";
+  import { getAction } from "../../../lib/actions/registry";
+  import type { Action, Binding } from "../../../lib/types";
+  import ActionPickerModal from "./ActionPickerModal.svelte";
   import OptionsForm from "./OptionsForm.svelte";
   import TriggerInput from "./TriggerInput.svelte";
 
@@ -12,28 +13,19 @@
 
   const { binding, onUpdate, onDelete }: Props = $props();
 
-  // Filter the registry to actions valid for this binding's scope.
-  // Step 4 has Global only, but the structure works once site:* arrives.
-  const candidateActions = $derived.by(() => {
-    const all = listActions();
-    return all.filter((a) => isCompatibleScope(a.scope, binding.scope));
-  });
-
   const action = $derived(getAction(binding.actionId));
 
-  function isCompatibleScope(actionScope: Scope, bindingScope: Scope): boolean {
-    return actionScope === bindingScope;
-  }
+  let pickerOpen = $state(false);
 
-  function onActionChange(newId: string) {
-    const next = getAction(newId);
-    if (!next) return;
+  function pickAction(next: Action<unknown>) {
+    pickerOpen = false;
+    if (next.id === binding.actionId) return;
     // Reset options to the new action's defaults — different actions have
     // different options shapes, so carrying values over would just produce
     // invalid bindings the loader would have to repair on the next read.
     onUpdate({
       ...binding,
-      actionId: newId,
+      actionId: next.id,
       options: structuredClone(next.options.defaults) as Record<
         string,
         unknown
@@ -60,14 +52,17 @@
   </div>
 
   <div class="cell action">
-    <select
-      value={binding.actionId}
-      onchange={(e) => onActionChange((e.currentTarget as HTMLSelectElement).value)}
+    <button
+      type="button"
+      class="action-button"
+      onclick={() => {
+        pickerOpen = true;
+      }}
+      title="Change action"
     >
-      {#each candidateActions as a (a.id)}
-        <option value={a.id}>{a.label}</option>
-      {/each}
-    </select>
+      <span class="action-label">{action?.label ?? "Pick an action…"}</span>
+      <span class="chev">▾</span>
+    </button>
   </div>
 
   <div class="cell options">
@@ -96,6 +91,17 @@
   </div>
 </div>
 
+{#if pickerOpen}
+  <ActionPickerModal
+    bindingScope={binding.scope}
+    currentActionId={binding.actionId}
+    onClose={() => {
+      pickerOpen = false;
+    }}
+    onPick={pickAction}
+  />
+{/if}
+
 <style>
   .row {
     display: grid;
@@ -117,17 +123,38 @@
     min-width: 0;
   }
 
-  select {
+  button.action-button {
     width: 100%;
     border: 1px solid #d8d3c8;
     border-radius: 4px;
-    padding: 4px 6px;
+    padding: 4px 8px;
     font: inherit;
     background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    text-align: left;
   }
-  select:focus {
+  button.action-button:hover {
+    background: #f4f2ee;
+    border-color: #b3ad9f;
+  }
+  button.action-button:focus-visible {
     outline: 1px solid #1a1815;
     border-color: #1a1815;
+  }
+  .action-label {
+    font-size: 12px;
+    color: #1a1815;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .chev {
+    color: #8a857a;
+    font-size: 10px;
   }
 
   .row-actions {
@@ -135,7 +162,8 @@
     gap: 4px;
     justify-content: flex-end;
   }
-  button {
+  button.toggle,
+  button.del {
     border: 1px solid #d8d3c8;
     background: #fff;
     border-radius: 4px;
@@ -143,7 +171,8 @@
     cursor: pointer;
     font-size: 11px;
   }
-  button:hover {
+  button.toggle:hover,
+  button.del:hover {
     background: #f4f2ee;
   }
   button.toggle {

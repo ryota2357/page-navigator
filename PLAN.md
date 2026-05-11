@@ -344,9 +344,28 @@ Each step has: **Goal**, **Tasks**, **Verify**, **Output**, **Feedback checkpoin
 
 **Feedback checkpoint**: sites-as-modules pattern feels right? Anything to revise before adding more services?
 
-**Open questions**:
-- Does the service module own the action *definition* or only the *implementation* (with defs in a central registry)? Affects how Step 6+ scales.
-- How do we represent service-id in storage to keep migration sane when services are renamed/removed?
+**Open questions** *(addressed by Step-5 decisions below)*:
+- ~~Does the service module own the action *definition* or only the *implementation*?~~ Definition lives in the service module (`services/google/actions.ts`); a thin registry composes scope modules. Matches design-doc §2.3 option C colocation.
+- ~~How do we represent service-id in storage when services are renamed/removed?~~ `local:bindings` row carries `scope: "site:<id>"`; the loader drops rows whose `<id>` is no longer in the catalog (`isKnownServiceId`). Rename = removed + new id from the user's POV; not a one-shot migration concern.
+
+**Decisions made in Step 5** (full notes in `docs/dev/step-05-notes.md`):
+
+- **Picker variant**: modal only. Inline / palette variants from the mock stay deferred to Step 6+ polish.
+- **Site visibility**: configured-only (sites with ≥1 binding visible; `+ Add` reveals the unconfigured catalog). Same idiom used by mock's `configured-only` mode.
+- **Google focus impl**: `el.focus({ preventScroll: true }) + scrollIntoView({ block: "center" })`. `cursorIndex` is module-level and syncs from `document.activeElement` so click/Tab don't desync. `openResult` newTab path uses synthetic `MouseEvent("click", { ctrlKey, metaKey })` so the browser applies its own modifier-click semantics.
+- **Scope compatibility**: `actionScope === "global" || actionScope === bindingScope`. Step 4 left this as keep-strict-or-relax; relaxed so a `site:google` binding can pick `scroll.down`. Centralised in `src/lib/actions/scope.ts`.
+- **Cross-scope precedence**: single-trie merge with **exact-trigger** shadow (`selectBindingsForScope` filters global rows whose trigger sequence exactly matches a site row). Diverges from design-doc §4.4's "two tries" sketch — same observable behaviour for the documented "same trigger" rule, much less code. Prefix-overlap (`site j j` vs `global j`) is intentionally not shadowed; both remain and the dispatcher's leaf+children timeout disambiguates.
+- **Loader hardening**: `isValidScope` consults `isKnownServiceId(siteId)`. Orphan rows from removed services drop on load + write-back (same §5.3 C案 path).
+- **Catalog file naming**: `services/catalog.ts` (per design-doc §5.4) exporting `SERVICES`, `findService`, `isKnownServiceId`, `resolveActiveScopes`, `resolveActiveService`. `services/google/index.ts` re-exports the service def + `googleActions`.
+- **Active scope freezing**: resolved once at content-script init from `location.href`. Google's SERP is a full nav per query, so SPA-style URL tracking isn't yet needed.
+- **No `Action.category` field**: dropped from the early draft of this step. With only 2 categories total, grouping the picker by `action.scope` carries the same information. Revisit when a single scope has ≥3 categories' worth of actions.
+- **Service module = actions colocated**: `services/<id>/actions.ts` next to `selectors.ts` and `index.ts`. Confirms the design-doc §2.3 option C decision against the alternative of a central action defs registry.
+
+**Step-5 quirks to remember**:
+
+- **`{@const}` and Biome**: Svelte allows in-template `{@const x = …}`; Biome's `noAssignInExpressions` flags it. Fix is to pre-derive the per-iteration values into a `$derived` array in `<script>` and consume that — applied in `Sidebar` (`allSites` carries `scope`) and `ActionPickerModal` (`grouped` carries `idx` per item).
+- **`Action<unknown>.options.meta` is `unknown`-indexed**. Inside the picker we project through `Record<string, FieldMeta>` to recover `kind` and `defaults` typing. Doesn't bite `OptionsForm` because that consumes meta from a concrete action.
+- **Scrim a11y suppressions**: only the Svelte directive (`<!-- svelte-ignore a11y_no_static_element_interactions -->`) survives. Earlier Biome suppressions for `useKeyWithClickEvents` / `noStaticElementInteractions` resolved to "unknown rule" warnings (Biome stopped flagging those on Svelte attrs) and were removed.
 
 ---
 

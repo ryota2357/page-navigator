@@ -1,8 +1,11 @@
 import { Dispatcher } from "../lib/dispatcher";
+import { selectBindingsForScope } from "../lib/dispatcher/scope";
 import { normalize } from "../lib/keys";
 import { log } from "../lib/log";
+import { resolveActiveService } from "../lib/services/catalog";
 import { bindingsItem, settingsItem } from "../lib/storage";
 import { loadBindings, loadSettings } from "../lib/storage/loader";
+import type { Scope } from "../lib/types";
 
 // Walk through open shadow roots to find the real focused element.
 // Closed shadow roots remain unreadable from extension code; we accept the
@@ -36,18 +39,29 @@ export default defineContentScript({
   // script's world.
   world: "ISOLATED",
   async main() {
+    // Active scope is fixed at content-script init: pn doesn't observe
+    // SPA URL changes for rescoping yet. If the user navigates inside a
+    // SPA from Google to a non-Google subpath, the site bindings remain
+    // active until next full load. Acceptable for v1; revisit if Google
+    // ever spins up a SPA shell.
+    const activeService = resolveActiveService(location.href);
+    const activeSiteScope: Scope | null = activeService
+      ? `site:${activeService.id}`
+      : null;
+
     const settings = await loadSettings();
-    const bindings = await loadBindings();
+    const allBindings = await loadBindings();
     const dispatcher = new Dispatcher(settings.sequenceTimeoutMs);
-    dispatcher.rebuild(bindings);
+    dispatcher.rebuild(selectBindingsForScope(allBindings, activeSiteScope));
 
     // Push-direction updates: rebuild trie when bindings change, update the
     // timeout when settings change. Two separate watchers so binding edits
     // don't reset the timer state and vice-versa.
     bindingsItem.watch(async () => {
       const fresh = await loadBindings();
-      dispatcher.rebuild(fresh);
-      log.debug("dispatcher rebuilt", { count: fresh.length });
+      const scoped = selectBindingsForScope(fresh, activeSiteScope);
+      dispatcher.rebuild(scoped);
+      log.debug("dispatcher rebuilt", { count: scoped.length });
     });
     settingsItem.watch(async () => {
       const fresh = await loadSettings();
@@ -85,7 +99,8 @@ export default defineContentScript({
     );
 
     log.info("content script ready", {
-      bindings: bindings.length,
+      bindings: allBindings.length,
+      activeScope: activeSiteScope ?? "global",
       sequenceTimeoutMs: settings.sequenceTimeoutMs,
     });
   },

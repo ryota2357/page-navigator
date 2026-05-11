@@ -154,6 +154,36 @@ describe("loadBindings", () => {
     expect(result).toEqual([]);
   });
 
+  it("accepts known site scopes (site:google)", async () => {
+    const seed: Binding = {
+      id: "b1",
+      scope: "site:google",
+      triggers: [["j"]],
+      actionId: "google.focusNextResult",
+      options: { wrap: false },
+      enabled: true,
+    };
+    await bindingsItem.setValue([seed]);
+    const result = await loadBindings();
+    expect(result).toEqual([seed]);
+  });
+
+  it("drops a binding with an unknown site:* scope", async () => {
+    await bindingsItem.setValue([
+      {
+        id: "b1",
+        scope: "site:unknown",
+        triggers: [["j"]],
+        actionId: "scroll.down",
+        options: { amount: 100, smooth: false },
+        enabled: true,
+      },
+    ] as Binding[]);
+    const result = await loadBindings();
+    expect(result).toEqual([]);
+    expect(await bindingsItem.getValue()).toEqual([]);
+  });
+
   it("drops a binding with malformed structure", async () => {
     await bindingsItem.setValue([
       // missing triggers

@@ -27,6 +27,7 @@ const scrollByMeta = {
 const scrollDown: Action<ScrollByOptions> = {
   id: "scroll.down",
   label: "Scroll down",
+  description: "Scroll down by a fixed amount.",
   scope: "global",
   runtime: "content",
   options: {
@@ -45,6 +46,7 @@ const scrollDown: Action<ScrollByOptions> = {
 const scrollUp: Action<ScrollByOptions> = {
   id: "scroll.up",
   label: "Scroll up",
+  description: "Scroll up by a fixed amount.",
   scope: "global",
   runtime: "content",
   options: {
@@ -82,6 +84,7 @@ const pageScrollMeta = {
 const scrollPageDown: Action<PageScrollOptions> = {
   id: "scroll.pageDown",
   label: "Scroll page down",
+  description: "Scroll down by a fraction of the viewport height.",
   scope: "global",
   runtime: "content",
   options: {
@@ -100,6 +103,7 @@ const scrollPageDown: Action<PageScrollOptions> = {
 const scrollPageUp: Action<PageScrollOptions> = {
   id: "scroll.pageUp",
   label: "Scroll page up",
+  description: "Scroll up by a fraction of the viewport height.",
   scope: "global",
   runtime: "content",
   options: {
@@ -125,6 +129,7 @@ type ToTopOptions = PredicateType<typeof toTopPred>;
 const scrollToTop: Action<ToTopOptions> = {
   id: "scroll.toTop",
   label: "Scroll to top",
+  description: "Jump to the very top of the page.",
   scope: "global",
   runtime: "content",
   options: {

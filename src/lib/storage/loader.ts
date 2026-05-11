@@ -2,6 +2,7 @@ import { is } from "@core/unknownutil";
 import { getAction } from "../actions/registry";
 import { parse as parseKey } from "../keys/parse";
 import { log } from "../log";
+import { isKnownServiceId } from "../services/catalog";
 import type { Binding, FieldMeta, OptionsMeta, Settings } from "../types";
 import {
   bindingsItem,
@@ -21,8 +22,13 @@ const isBindingRow = is.ObjectOf({
   enabled: is.Boolean,
 });
 
+// A scope is valid iff it's "global" or "site:<known-id>". Unknown site
+// scopes (e.g. left over after a service was removed from the catalog)
+// drop their bindings on load — the action wouldn't run anyway.
 function isValidScope(s: string): boolean {
-  return s === "global" || s.startsWith("site:");
+  if (s === "global") return true;
+  if (s.startsWith("site:")) return isKnownServiceId(s.slice("site:".length));
+  return false;
 }
 
 // Clamp numeric options against meta. Mutates `opts`. Returns true if any

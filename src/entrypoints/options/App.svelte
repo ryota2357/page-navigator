@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { listActions } from "../../lib/actions/registry";
+  import { isCompatibleScope } from "../../lib/actions/scope";
   import { bindingsItem, settingsItem } from "../../lib/storage";
   import type { Binding, Scope, Settings } from "../../lib/types";
   import BindingsList from "./components/BindingsList.svelte";
@@ -14,9 +15,6 @@
   // writes, so we update local state synchronously after every setValue
   // (see docs/dev/step-03-notes.md "Popup detour").
 
-  const actions = listActions();
-  const globalActions = actions.filter((a) => a.scope === "global");
-
   let bindings = $state<Binding[]>([]);
   let settings = $state<Settings>({ sequenceTimeoutMs: 1000 });
   let selectedScope = $state<Scope>("global");
@@ -24,6 +22,21 @@
 
   const visibleBindings = $derived(
     bindings.filter((b) => b.scope === selectedScope),
+  );
+
+  // Per-scope counts. The sidebar uses `site:<id>` keys for site scopes.
+  const bindingCounts = $derived.by(() => {
+    const counts: Record<string, number> = {};
+    for (const b of bindings) {
+      counts[b.scope] = (counts[b.scope] ?? 0) + 1;
+    }
+    return counts;
+  });
+
+  // Action picker only offers actions compatible with the binding's scope
+  // (see ../lib/actions/scope.ts).
+  const defaultActionForScope = $derived((scope: Scope) =>
+    listActions().find((a) => isCompatibleScope(a.scope, scope)),
   );
 
   onMount(async () => {
@@ -41,7 +54,7 @@
   });
 
   async function addBinding() {
-    const action = globalActions[0];
+    const action = defaultActionForScope(selectedScope);
     if (!action) return;
     const next: Binding[] = [
       ...(await bindingsItem.getValue()),
@@ -92,7 +105,7 @@
 <div class="app">
   <Sidebar
     {selectedScope}
-    bindingCounts={{ global: bindings.filter((b) => b.scope === "global").length }}
+    {bindingCounts}
     onSelectScope={(s) => {
       selectedScope = s;
     }}

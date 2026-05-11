@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { findService } from "../../../lib/services/catalog";
   import type { Scope } from "../../../lib/types";
 
   type Props = {
@@ -8,9 +9,11 @@
 
   const { currentScope, onAdd }: Props = $props();
 
-  const scopeLabel = $derived(
-    currentScope === "global" ? "Global" : currentScope,
-  );
+  const scopeLabel = $derived.by(() => {
+    if (currentScope === "global") return "Global";
+    const id = currentScope.slice("site:".length);
+    return findService(id)?.label ?? currentScope;
+  });
 </script>
 
 <header class="toolbar">
