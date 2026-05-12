@@ -1,19 +1,10 @@
-// Visible focus indicator for the currently-cursored result. Browsers'
-// native :focus outline is unreliable here — Google's stylesheet often
-// suppresses it, and on dark-themed sub-results it's invisible. So we
-// inject our own style + class (web-search-navigator pattern) and toggle
-// the class on every cursor move.
-//
-// The class lives in the page DOM but the rule is scoped to our class
-// name, so we don't bleed into Google's CSS. Injection is idempotent.
-
 const FOCUSED_CLASS = "pn-google-focused";
 const STYLE_ID = "pn-google-focused-style";
 
-// `outline` (not `border`) so we don't shift result layout. The arrow
-// renders via ::before with `position: absolute` for the same reason —
-// no surrounding-element reflow when we move. !important defends against
-// Google ever shipping rules at higher specificity.
+// Browsers' native :focus outline is unreliable on Google's SERP — Google's
+// stylesheet often suppresses it, and on dark sub-results it's invisible.
+// outline+::before avoids layout shift; !important defends against Google
+// ever shipping higher-specificity rules.
 const CSS = `
 .${FOCUSED_CLASS} {
   position: relative !important;
@@ -44,11 +35,8 @@ const CSS = `
 let stylesInjected = false;
 function ensureStyles(): void {
   if (stylesInjected) return;
-  // Re-check via DOM in case a previous content-script lifecycle injected
-  // the element (full-page nav resets the JS module, but on bfcache the
-  // node can survive). Same bfcache hazard for the class itself: clean up
-  // any stragglers from the previous lifecycle so we don't double-highlight
-  // on the first move.
+  // bfcache can preserve the DOM node from the previous lifecycle; re-check
+  // and clean up any stragglers before re-adding.
   if (!document.getElementById(STYLE_ID)) {
     const style = document.createElement("style");
     style.id = STYLE_ID;

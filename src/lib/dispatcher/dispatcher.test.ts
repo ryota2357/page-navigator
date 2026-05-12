@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Binding } from "../types";
+import type { Binding } from "../storage/bindings";
 import { Dispatcher } from "./dispatcher";
 import { compileTrie } from "./trie";
 

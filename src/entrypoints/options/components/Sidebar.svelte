@@ -1,34 +1,26 @@
 <script lang="ts">
-  import { SERVICES } from "../../../lib/services/catalog";
-  import type { Scope } from "../../../lib/types";
+  import { SCOPE_IDS, SCOPES, type ScopeId } from "../../../lib/scopes";
 
   type Props = {
-    selectedScope: Scope;
+    selectedScope: ScopeId;
     bindingCounts: Record<string, number>;
-    onSelectScope: (scope: Scope) => void;
+    onSelectScope: (scope: ScopeId) => void;
   };
 
   const { selectedScope, bindingCounts, onSelectScope }: Props = $props();
 
-  // Pre-compute the site scope key once so each-blocks don't need
-  // `{@const}` (which Biome flags as an assignment in expression).
-  type SiteEntry = { id: string; label: string; scope: Scope; count: number };
+  type SiteEntry = { id: ScopeId; label: string; count: number };
   const allSites: SiteEntry[] = $derived(
-    SERVICES.map((s) => {
-      const scope = `site:${s.id}` as Scope;
-      return {
-        id: s.id,
-        label: s.label,
-        scope,
-        count: bindingCounts[scope] ?? 0,
-      };
-    }),
+    SCOPE_IDS.filter((id) => id !== "global").map((id) => ({
+      id,
+      label: SCOPES[id].label,
+      count: bindingCounts[id] ?? 0,
+    })),
   );
 
-  // Configured = the user already has bindings under this site scope.
-  // Mock's "configured-only" mode: unconfigured sites live behind the
-  // + button so the sidebar doesn't accumulate noise the user never
-  // chose to engage with.
+  // Configured = the user already has bindings under this site. Unconfigured
+  // sites live behind the + button so the sidebar doesn't accumulate noise
+  // the user never chose to engage with.
   const configuredSites = $derived(allSites.filter((s) => s.count > 0));
   const availableSites = $derived(allSites.filter((s) => s.count === 0));
 
@@ -77,8 +69,8 @@
           <button
             type="button"
             class="scope"
-            aria-current={selectedScope === s.scope ? "page" : undefined}
-            onclick={() => onSelectScope(s.scope)}
+            aria-current={selectedScope === s.id ? "page" : undefined}
+            onclick={() => onSelectScope(s.id)}
           >
             <span class="label">{s.label}</span>
             <span class="count">{s.count}</span>
@@ -115,7 +107,7 @@
                   class="scope"
                   onclick={() => {
                     addOpen = false;
-                    onSelectScope(s.scope);
+                    onSelectScope(s.id);
                   }}
                 >
                   <span class="label">{s.label}</span>

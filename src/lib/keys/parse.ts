@@ -1,28 +1,25 @@
-import type { KeyToken } from "../types";
 import { isKnownNonPrintable } from "./canonical";
 import { type Mods, serialize } from "./serialize";
+import type { KeyToken } from "./types";
 
 // Lenient parser: re-canonicalizes any user-authored KeyToken-like string.
 // Accepts case-insensitive content inside <…> for both modifier letters and
 // printables (so `<C-J>` = `<c-j>` = Ctrl+j). Modifier order doesn't matter.
 //
-// Input expectations (docs/dev/step-02-data-model.md §1.1, §1.4):
-//   - Bare single character ("j", "?", " ") — case significant.
-//   - Wrapped form: <[mods-]key> where mods are any of A/C/M/S in any case
-//     and any order; key is the printable char or a UpperCamelCase name.
-//
-// Returns the canonical KeyToken. Throws on syntactically malformed input
-// (the storage loader catches and drops the offending row).
+// Throws on syntactically malformed input — the storage loader catches and
+// drops the offending row.
 
 const WRAPPED_RE = /^<((?:[ACMSacms]-)+)?(.+)>$/;
 const MODIFIER_LETTERS = new Set(["A", "C", "M", "S"]);
+
+function emptyMods(): Mods {
+  return { alt: false, ctrl: false, meta: false, shift: false };
+}
 
 export function parse(input: string): KeyToken {
   if (input.length === 0) throw new Error("empty key token");
 
   if (!input.startsWith("<")) {
-    // Bare form: must be exactly one character. (Multi-char unwrapped names
-    // are illegal — `Tab` must be `<Tab>`.)
     if (input.length !== 1) {
       throw new Error(`bare key token must be a single character: ${input}`);
     }
@@ -59,9 +56,6 @@ export function parse(input: string): KeyToken {
     }
   }
 
-  // Validate the key part: either a single printable character, or a known
-  // non-printable canonical name (case-insensitive). Anything else (e.g.
-  // multi-char garbage like "C-" produced by stray hyphens) is malformed.
   let key = keyPart;
   if (key.length === 1) {
     if (/^[A-Za-z]$/.test(key)) key = key.toLowerCase();
@@ -72,12 +66,6 @@ export function parse(input: string): KeyToken {
   return serialize(mods, key);
 }
 
-function emptyMods(): Mods {
-  return { alt: false, ctrl: false, meta: false, shift: false };
-}
-
-// Convenience: parse an entire trigger sequence (array of canonical or
-// lenient strings).
 export function parseTrigger(tokens: string[]): KeyToken[] {
   return tokens.map(parse);
 }

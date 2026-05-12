@@ -1,19 +1,14 @@
 <script lang="ts">
-  import { findService } from "../../../lib/services/catalog";
-  import type { Scope } from "../../../lib/types";
+  import { SCOPES, type ScopeId } from "../../../lib/scopes";
 
   type Props = {
-    currentScope: Scope;
+    currentScope: ScopeId;
     onAdd: () => void;
   };
 
   const { currentScope, onAdd }: Props = $props();
 
-  const scopeLabel = $derived.by(() => {
-    if (currentScope === "global") return "Global";
-    const id = currentScope.slice("site:".length);
-    return findService(id)?.label ?? currentScope;
-  });
+  const scopeLabel = $derived(SCOPES[currentScope].label);
 </script>
 
 <header class="toolbar">

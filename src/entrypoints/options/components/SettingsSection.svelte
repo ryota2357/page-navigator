@@ -2,8 +2,8 @@
   import {
     SEQUENCE_TIMEOUT_MAX_MS,
     SEQUENCE_TIMEOUT_MIN_MS,
+    type Settings,
   } from "../../../lib/storage";
-  import type { Settings } from "../../../lib/types";
 
   type Props = {
     settings: Settings;

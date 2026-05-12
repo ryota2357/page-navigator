@@ -1,7 +1,12 @@
 <script lang="ts">
-  import { actionDisplay } from "../../../lib/actions/display";
-  import { getAction } from "../../../lib/actions/registry";
-  import type { Action, Binding } from "../../../lib/types";
+  import type { Action } from "../../../lib/action";
+  import {
+    ACTIONS,
+    type ActionId,
+    actionDisplay,
+    isActionId,
+  } from "../../../lib/scopes";
+  import type { Binding } from "../../../lib/storage";
   import ActionPickerModal from "./ActionPickerModal.svelte";
   import OptionsForm from "./OptionsForm.svelte";
   import TriggerInput from "./TriggerInput.svelte";
@@ -14,24 +19,25 @@
 
   const { binding, onUpdate, onDelete }: Props = $props();
 
-  const action = $derived(getAction(binding.actionId));
-  const display = $derived(action ? actionDisplay(action.id) : null);
+  const action = $derived(
+    isActionId(binding.actionId) ? ACTIONS[binding.actionId] : null,
+  );
+  const display = $derived(
+    isActionId(binding.actionId) ? actionDisplay(binding.actionId) : null,
+  );
 
   let pickerOpen = $state(false);
 
-  function pickAction(next: Action<unknown>) {
+  function pickAction(nextId: ActionId, next: Action) {
     pickerOpen = false;
-    if (next.id === binding.actionId) return;
+    if (nextId === binding.actionId) return;
     // Reset options to the new action's defaults — different actions have
     // different options shapes, so carrying values over would just produce
     // invalid bindings the loader would have to repair on the next read.
     onUpdate({
       ...binding,
-      actionId: next.id,
-      options: structuredClone(next.options.defaults) as Record<
-        string,
-        unknown
-      >,
+      actionId: nextId,
+      options: structuredClone(next.defaults),
     });
   }
 
@@ -64,8 +70,8 @@
     >
       {#if display}
         <span class="action-name">{display.name}</span>
-        {#if display.badge}
-          <span class="badge site">{display.badge.label}</span>
+        {#if display.badgeLabel}
+          <span class="badge site">{display.badgeLabel}</span>
         {/if}
       {:else}
         <span class="action-name placeholder">Pick an action…</span>
@@ -77,8 +83,8 @@
   <div class="cell options">
     {#if action}
       <OptionsForm
-        meta={action.options.meta}
-        defaults={action.options.defaults}
+        meta={action.meta}
+        defaults={action.defaults}
         values={binding.options}
         onChange={onOptionsChange}
       />

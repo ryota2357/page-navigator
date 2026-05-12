@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Binding } from "../../../lib/types";
+  import type { Binding } from "../../../lib/storage";
   import BindingRow from "./BindingRow.svelte";
 
   type Props = {

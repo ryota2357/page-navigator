@@ -1,15 +1,17 @@
+import type { KeyToken } from "../keys/types";
 import { log } from "../log";
-import type { Binding, KeyToken, Scope } from "../types";
+import type { ActionId, ScopeId } from "../scopes";
+import type { Binding } from "../storage/bindings";
 
-export type ConcreteLeaf = {
+type ConcreteLeaf = {
   conflicted?: false;
   bindingId: string;
-  scope: Scope;
-  actionId: string;
+  scope: ScopeId;
+  actionId: ActionId;
   options: unknown;
 };
 
-export type ConflictedLeaf = {
+type ConflictedLeaf = {
   conflicted: true;
   bindingIds: string[];
 };
@@ -21,13 +23,13 @@ export type TrieNode = {
   children?: Map<KeyToken, TrieNode>;
 };
 
-// Compile bindings to a key-token trie.
+// Two bindings in the same scope with the same trigger become a conflicted
+// leaf — the dispatcher logs and drops instead of firing either. Cross-scope
+// "same trigger" doesn't reach the trie because activeBindings has already
+// resolved precedence (site shadows global).
 //
-// Conflicts (two bindings producing a leaf at the same path) are recorded
-// at the leaf and surfaced with `conflicted: true` so the dispatcher can
-// log + drop instead of firing either action (docs/dev/step-02-data-model.md §4.3).
-//
-// `enabled === false` rows are skipped at compile time; rebuild on toggle.
+// `enabled === false` rows are skipped here as the final safety net; the
+// caller's compose pass should already have filtered them out.
 export function compileTrie(bindings: ReadonlyArray<Binding>): TrieNode {
   const root: TrieNode = {};
 

@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { OptionsMeta } from "../../../lib/types";
+  import type { FieldMeta } from "../../../lib/action";
 
   type Props = {
-    meta: OptionsMeta<Record<string, unknown>>;
+    meta: Record<string, FieldMeta>;
     defaults: Record<string, unknown>;
     values: Record<string, unknown>;
     onChange: (next: Record<string, unknown>) => void;
@@ -10,13 +10,13 @@
 
   const { meta, defaults, values, onChange }: Props = $props();
 
+  // Defaults are surfaced for fields the binding hasn't filled in yet so the
+  // UI shows what the action will actually receive (the loader will fill
+  // these in on next read).
   const fields = $derived(
     Object.keys(meta).map((key) => ({
       key,
       meta: meta[key],
-      // Surface defaults for fields the binding hasn't filled in yet.
-      // The loader will fill these in on next read; rendering them here
-      // keeps the UI honest about what the action will receive.
       value: key in values ? values[key] : defaults[key],
     })),
   );
@@ -42,7 +42,7 @@
         {#if f.meta.kind === "number"}
           <input
             type="number"
-            value={f.value as number}
+            value={typeof f.value === "number" ? f.value : 0}
             min={f.meta.min}
             max={f.meta.max}
             step={f.meta.step ?? 1}
@@ -52,13 +52,13 @@
         {:else if f.meta.kind === "boolean"}
           <input
             type="checkbox"
-            checked={f.value as boolean}
+            checked={f.value === true}
             onchange={(e) =>
               setField(f.key, (e.currentTarget as HTMLInputElement).checked)}
           >
         {:else if f.meta.kind === "select"}
           <select
-            value={f.value as string}
+            value={typeof f.value === "string" ? f.value : ""}
             onchange={(e) =>
               setField(
                 f.key,

@@ -1,12 +1,27 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
-import type { Binding } from "../types";
-import { bindingsItem, settingsItem } from "./items";
-import { clampOptions, loadBindings, loadSettings } from "./loader";
+import {
+  type Binding,
+  bindingsItem,
+  clampOptions,
+  loadBindings,
+} from "./bindings";
+import { loadSettings, settingsItem } from "./settings";
 
 beforeEach(() => {
   fakeBrowser.reset();
 });
+
+// Seed the underlying storage with a raw shape that bypasses Binding's type
+// guard so we can exercise the loader's drop / repair paths. Reads go
+// through the same key the typed item uses, so loadBindings() picks it up.
+async function seedRawBindings(rows: ReadonlyArray<unknown>): Promise<void> {
+  await fakeBrowser.storage.local.set({ bindings: rows });
+}
+
+async function seedRawSettings(value: unknown): Promise<void> {
+  await fakeBrowser.storage.local.set({ settings: value });
+}
 
 describe("clampOptions", () => {
   it("clamps below min, above max; leaves in-range values alone", () => {
@@ -61,7 +76,7 @@ describe("loadBindings", () => {
   });
 
   it("drops a binding with unknown actionId", async () => {
-    await bindingsItem.setValue([
+    await seedRawBindings([
       {
         id: "b1",
         scope: "global",
@@ -70,14 +85,14 @@ describe("loadBindings", () => {
         options: {},
         enabled: true,
       },
-    ] as Binding[]);
+    ]);
     const result = await loadBindings();
     expect(result).toEqual([]);
     expect(await bindingsItem.getValue()).toEqual([]);
   });
 
   it("canonicalizes lenient triggers and writes back", async () => {
-    await bindingsItem.setValue([
+    await seedRawBindings([
       {
         id: "b1",
         scope: "global",
@@ -86,7 +101,7 @@ describe("loadBindings", () => {
         options: { amount: 100, smooth: false },
         enabled: true,
       },
-    ] as Binding[]);
+    ]);
     const result = await loadBindings();
     expect(result[0].triggers).toEqual([["<C-j>"]]);
     const written = await bindingsItem.getValue();
@@ -94,7 +109,7 @@ describe("loadBindings", () => {
   });
 
   it("fills missing option fields from defaults", async () => {
-    await bindingsItem.setValue([
+    await seedRawBindings([
       {
         id: "b1",
         scope: "global",
@@ -103,13 +118,13 @@ describe("loadBindings", () => {
         options: { amount: 50 },
         enabled: true,
       },
-    ] as unknown as Binding[]);
+    ]);
     const result = await loadBindings();
     expect(result[0].options).toEqual({ amount: 50, smooth: false });
   });
 
   it("strips extra option fields not declared by the action", async () => {
-    await bindingsItem.setValue([
+    await seedRawBindings([
       {
         id: "b1",
         scope: "global",
@@ -118,13 +133,13 @@ describe("loadBindings", () => {
         options: { amount: 100, smooth: false, mystery: 42 },
         enabled: true,
       },
-    ] as unknown as Binding[]);
+    ]);
     const result = await loadBindings();
     expect(result[0].options).toEqual({ amount: 100, smooth: false });
   });
 
   it("clamps out-of-range numeric options and writes back", async () => {
-    await bindingsItem.setValue([
+    await seedRawBindings([
       {
         id: "b1",
         scope: "global",
@@ -133,14 +148,14 @@ describe("loadBindings", () => {
         options: { amount: -999, smooth: false },
         enabled: true,
       },
-    ] as Binding[]);
+    ]);
     const result = await loadBindings();
     expect(result[0].options.amount).toBe(1);
     expect((await bindingsItem.getValue())[0].options.amount).toBe(1);
   });
 
   it("drops a binding whose options fail the predicate", async () => {
-    await bindingsItem.setValue([
+    await seedRawBindings([
       {
         id: "b1",
         scope: "global",
@@ -149,15 +164,15 @@ describe("loadBindings", () => {
         options: { amount: "not a number", smooth: false },
         enabled: true,
       },
-    ] as unknown as Binding[]);
+    ]);
     const result = await loadBindings();
     expect(result).toEqual([]);
   });
 
-  it("accepts known site scopes (site:google)", async () => {
+  it("accepts known site scopes (google)", async () => {
     const seed: Binding = {
       id: "b1",
-      scope: "site:google",
+      scope: "google",
       triggers: [["j"]],
       actionId: "google.focusNextResult",
       options: { wrap: false },
@@ -168,25 +183,24 @@ describe("loadBindings", () => {
     expect(result).toEqual([seed]);
   });
 
-  it("drops a binding with an unknown site:* scope", async () => {
-    await bindingsItem.setValue([
+  it("drops a binding with an unknown scope", async () => {
+    await seedRawBindings([
       {
         id: "b1",
-        scope: "site:unknown",
+        scope: "unknown",
         triggers: [["j"]],
         actionId: "scrollDown",
         options: { amount: 100, smooth: false },
         enabled: true,
       },
-    ] as Binding[]);
+    ]);
     const result = await loadBindings();
     expect(result).toEqual([]);
     expect(await bindingsItem.getValue()).toEqual([]);
   });
 
   it("drops a binding with malformed structure", async () => {
-    await bindingsItem.setValue([
-      // missing triggers
+    await seedRawBindings([
       {
         id: "b1",
         scope: "global",
@@ -194,7 +208,7 @@ describe("loadBindings", () => {
         options: {},
         enabled: true,
       },
-    ] as unknown as Binding[]);
+    ]);
     const result = await loadBindings();
     expect(result).toEqual([]);
   });
@@ -220,13 +234,8 @@ describe("loadSettings", () => {
     expect(result.sequenceTimeoutMs).toBe(60_000);
   });
 
-  it("repairs NaN to fallback (1000)", async () => {
-    // JSON-serialised storage cannot round-trip Infinity (becomes null) or
-    // NaN — but a non-numeric type slipping through (e.g. via direct
-    // chrome.storage.local.set in devtools) must still be caught.
-    await settingsItem.setValue({
-      sequenceTimeoutMs: "fast" as unknown as number,
-    });
+  it("repairs NaN-like non-numbers to fallback (1000)", async () => {
+    await seedRawSettings({ sequenceTimeoutMs: "fast" });
     const result = await loadSettings();
     expect(result.sequenceTimeoutMs).toBe(1000);
     expect((await settingsItem.getValue()).sequenceTimeoutMs).toBe(1000);

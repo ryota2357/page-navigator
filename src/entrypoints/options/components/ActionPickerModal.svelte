@@ -1,22 +1,21 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { actionDisplay } from "../../../lib/actions/display";
-  import { listActions } from "../../../lib/actions/registry";
-  import { isCompatibleScope } from "../../../lib/actions/scope";
-  import { findService } from "../../../lib/services/catalog";
-  import type { Action, FieldMeta, Scope } from "../../../lib/types";
-
-  type MetaEntry = {
-    key: string;
-    kind: FieldMeta["kind"];
-    defaultValue: unknown;
-  };
+  import type { Action, FieldMeta } from "../../../lib/action";
+  import {
+    ACTION_IDS,
+    ACTIONS,
+    type ActionId,
+    actionDisplay,
+    isCompatibleScope,
+    SCOPES,
+    type ScopeId,
+  } from "../../../lib/scopes";
 
   type Props = {
-    bindingScope: Scope;
+    bindingScope: ScopeId;
     currentActionId: string;
     onClose: () => void;
-    onPick: (action: Action<unknown>) => void;
+    onPick: (id: ActionId, action: Action) => void;
   };
 
   const { bindingScope, currentActionId, onClose, onPick }: Props = $props();
@@ -25,97 +24,89 @@
   let focusIdx = $state(0);
   let inputEl: HTMLInputElement | undefined = $state();
 
-  // Compatibility filter is the same predicate the action runtime uses,
-  // so the picker never offers an action the dispatcher would refuse.
-  const compatibleActions = $derived(
-    listActions().filter((a) => isCompatibleScope(a.scope, bindingScope)),
+  // Same predicate the dispatcher uses, so the picker never offers an action
+  // the runtime would refuse.
+  const compatibleIds = $derived(
+    ACTION_IDS.filter((id) =>
+      isCompatibleScope(ACTIONS[id].scope, bindingScope),
+    ),
   );
 
-  // Substring match across id and description. The id is what the user
-  // actually sees in the list (label-less model), so search starts there.
-  const filtered = $derived.by(() => {
+  // Substring match across id and description.
+  const filteredIds = $derived.by(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return compatibleActions;
-    return compatibleActions.filter((a) => {
-      const haystack = [a.id, a.description ?? "", scopeLabel(a.scope)]
+    if (!q) return compatibleIds;
+    return compatibleIds.filter((id) => {
+      const action = ACTIONS[id];
+      const haystack = [id, action.description, SCOPES[action.scope].label]
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
     });
   });
 
-  // Single flat list, no group headers. Site-specific actions float to the
-  // top because that's why the user opened the picker on a site scope; bare
-  // Global actions follow. Items carry pre-derived display fields so the
-  // template doesn't need {@const} (Biome flags assign-in-expression).
+  // Single flat list. Site-specific actions float above global ones because
+  // that's why the user opened the picker on a site scope. Per-iteration
+  // values are pre-derived (Biome flags {@const} in templates).
   type Item = {
-    action: Action<unknown>;
+    id: ActionId;
+    action: Action;
     idx: number;
     name: string;
     badgeLabel: string | null;
   };
   const items = $derived.by<Item[]>(() => {
-    const siteFirst = filtered
+    const globalLast = (id: ActionId) =>
+      ACTIONS[id].scope === "global" ? 1 : 0;
+    const ordered = filteredIds
       .slice()
-      .sort((a, b) =>
-        a.scope === b.scope ? 0 : a.scope === "global" ? 1 : -1,
-      );
-    return siteFirst.map((action, idx) => {
-      const d = actionDisplay(action.id);
+      .sort((a, b) => globalLast(a) - globalLast(b));
+    return ordered.map((id, idx) => {
+      const d = actionDisplay(id);
       return {
-        action,
+        id,
+        action: ACTIONS[id],
         idx,
         name: d.name,
-        badgeLabel: d.badge?.label ?? null,
+        badgeLabel: d.badgeLabel,
       };
     });
   });
 
-  const flat = $derived(items.map((i) => i.action));
-  const focused = $derived<Action<unknown> | undefined>(flat[focusIdx]);
-  const focusedDisplay = $derived(focused ? actionDisplay(focused.id) : null);
+  const focused = $derived<Item | undefined>(items[focusIdx]);
 
-  // Resolve action.options.meta into a typed array. Action's `O` is
-  // `unknown` here, so we deliberately project through Record<…> for the
-  // template, but the per-field `kind` is always one of FieldMeta's
-  // variants because every Action declares it that way.
+  type MetaEntry = {
+    key: string;
+    kind: FieldMeta["kind"];
+    defaultValue: unknown;
+  };
   const focusedMeta = $derived<MetaEntry[]>(
     focused
-      ? Object.entries(focused.options.meta as Record<string, FieldMeta>).map(
-          ([key, meta]) => ({
-            key,
-            kind: meta.kind,
-            defaultValue: (focused.options.defaults as Record<string, unknown>)[
-              key
-            ],
-          }),
-        )
+      ? Object.entries(focused.action.meta).map(([key, m]) => ({
+          key,
+          kind: m.kind,
+          defaultValue: focused.action.defaults[key],
+        }))
       : [],
   );
 
-  function scopeLabel(scope: Scope): string {
-    if (scope === "global") return "Global";
-    const id = scope.slice("site:".length);
-    return findService(id)?.label ?? scope;
-  }
-
-  // Reset focus when filter changes so cursor doesn't strand off-list.
+  // Reset focus when the filter changes so the cursor doesn't strand off-list.
   $effect(() => {
-    const len = flat.length;
+    const len = items.length;
     if (focusIdx >= len) focusIdx = Math.max(0, len - 1);
   });
 
-  // Initial focus: search input, with cursor on the current action so
-  // ↵ without typing keeps the existing choice.
+  // Initial focus: search input, with cursor on the current action so ↵
+  // without typing keeps the existing choice.
   $effect(() => {
     tick().then(() => inputEl?.focus());
-    const cur = flat.findIndex((a) => a.id === currentActionId);
+    const cur = items.findIndex((i) => i.id === currentActionId);
     if (cur >= 0) focusIdx = cur;
   });
 
-  function pick(action: Action<unknown> | undefined) {
-    if (!action) return;
-    onPick(action);
+  function pick(item: Item | undefined) {
+    if (!item) return;
+    onPick(item.id, item.action);
   }
 
   function onKeydown(e: KeyboardEvent) {
@@ -126,7 +117,7 @@
     }
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      focusIdx = Math.min(flat.length - 1, focusIdx + 1);
+      focusIdx = Math.min(items.length - 1, focusIdx + 1);
       return;
     }
     if (e.key === "ArrowUp") {
@@ -146,7 +137,6 @@
   }
 </script>
 
-<!-- Scrim swallows outside clicks; the modal body stops propagation. -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="scrim" onclick={onScrimClick} onkeydown={onKeydown}>
   <div
@@ -162,7 +152,7 @@
           {#if bindingScope === "global"}
             Global actions only
           {:else}
-            Global + {scopeLabel(bindingScope)} actions
+            Global + {SCOPES[bindingScope].label} actions
           {/if}
         </p>
       </div>
@@ -188,7 +178,7 @@
         </div>
 
         <ol class="list" role="listbox">
-          {#each items as item (item.action.id)}
+          {#each items as item (item.id)}
             <li>
               <button
                 type="button"
@@ -197,7 +187,7 @@
                 onmousemove={() => {
                   focusIdx = item.idx;
                 }}
-                onclick={() => pick(item.action)}
+                onclick={() => pick(item)}
               >
                 <span class="name">{item.name}</span>
                 {#if item.badgeLabel}
@@ -212,18 +202,14 @@
       </section>
 
       <aside class="right">
-        {#if focused && focusedDisplay}
+        {#if focused}
           <div class="detail-head">
-            <h2 class="detail-name">{focusedDisplay.name}</h2>
-            {#if focusedDisplay.badge}
-              <span class="badge site"
-                >Only on {focusedDisplay.badge.label}</span
-              >
+            <h2 class="detail-name">{focused.name}</h2>
+            {#if focused.badgeLabel}
+              <span class="badge site">Only on {focused.badgeLabel}</span>
             {/if}
           </div>
-          {#if focused.description}
-            <p class="desc">{focused.description}</p>
-          {/if}
+          <p class="desc">{focused.action.description}</p>
 
           <h3 class="opts-label">Options</h3>
           {#if focusedMeta.length === 0}
@@ -256,8 +242,6 @@
 </div>
 
 <style>
-  /* Tokens echo the design mock (.claude/page-navigator.zip → styles.css)
-     so the picker reads the same as the rest of the planned UI. */
   .scrim {
     position: fixed;
     inset: 0;

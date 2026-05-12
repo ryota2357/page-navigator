@@ -8,15 +8,13 @@
 
   const { triggers, onChange }: Props = $props();
 
-  // Each tag in the UI is one Trigger (a KeyToken sequence). Adding a new
-  // tag puts the row into "capturing" mode: keystrokes accumulate into
-  // `pending` until the user explicitly commits (Enter / ✓ button) or
-  // cancels (Escape / ✗ button / click outside the chip).
+  // Each tag is one Trigger (a KeyToken sequence). + Add enters "capturing"
+  // mode: keystrokes accumulate into `pending` until the user commits
+  // (Enter / ✓) or cancels (Esc / ✗ / click outside the chip).
   //
-  // Enter / Escape are reserved as commit / cancel during capture; binding
-  // them as actual keys is not supported via this UI for now (storage
-  // edits still work, and the loader canonicalizes them — see
-  // docs/dev/step-04-notes.md).
+  // Enter and Esc are reserved as commit / cancel during capture; binding
+  // them as actual keys via this UI is not supported — storage edits still
+  // work, and the loader canonicalises them.
   let capturing = $state(false);
   let pending = $state<string[]>([]);
   let chipEl: HTMLSpanElement | undefined = $state();
@@ -47,7 +45,7 @@
       return;
     }
     // Plain Enter is the commit gesture. Modifier-Enter would be a real
-    // bindable token, but pn doesn't expose it via this UI yet.
+    // bindable token, but this UI doesn't expose it yet.
     if (
       e.key === "Enter" &&
       !e.ctrlKey &&
@@ -61,7 +59,7 @@
     }
 
     const token = normalize(e);
-    if (token === null) return; // composition or modifier-only press
+    if (token === null) return;
     e.preventDefault();
     e.stopPropagation();
     pending = [...pending, token];
@@ -75,9 +73,9 @@
 
   $effect(() => {
     if (!capturing) return;
-    // Capture-phase listeners so we win over inputs that happen to be
-    // focused. Deferred via timeout 0 so the click that opened capture
-    // mode doesn't immediately close it via the outside-click handler.
+    // Capture-phase so we win over focused inputs. Deferred via timeout 0 so
+    // the click that opened capture mode doesn't immediately close it via
+    // the outside-click handler.
     let active = false;
     const t = setTimeout(() => {
       window.addEventListener("keydown", onKeydown, true);
