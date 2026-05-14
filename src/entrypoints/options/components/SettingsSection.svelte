@@ -3,7 +3,7 @@
     SEQUENCE_TIMEOUT_MAX_MS,
     SEQUENCE_TIMEOUT_MIN_MS,
     type Settings,
-  } from "../../../lib/storage";
+  } from "@/lib/storage/settings";
 
   type Props = {
     settings: Settings;

@@ -1,17 +1,10 @@
-import { is, type PredicateType } from "@core/unknownutil";
-import { defineAction } from "../../action";
+import { defineAction } from "@/lib/action";
 
 function behavior(smooth: boolean): ScrollBehavior {
   return smooth ? "smooth" : "auto";
 }
 
-const byPixelPred = is.ObjectOf({
-  amount: is.Number,
-  smooth: is.Boolean,
-});
-type ByPixel = PredicateType<typeof byPixelPred>;
-
-const byPixelMeta = {
+const byPixelOptionSchema = {
   amount: {
     kind: "number",
     label: "Scroll amount (px)",
@@ -21,35 +14,33 @@ const byPixelMeta = {
   smooth: { kind: "boolean", label: "Smooth scroll" },
 } as const;
 
-export const scrollDown = defineAction<ByPixel>({
+export const scrollDownAction = defineAction("scrollDown", {
   scope: "global",
   description: "Scroll down by a fixed amount.",
-  pred: byPixelPred,
+  optionSchema: byPixelOptionSchema,
   defaults: { amount: 100, smooth: false },
-  meta: byPixelMeta,
-  run: (_ctx, opts) => {
-    window.scrollBy({ top: opts.amount, behavior: behavior(opts.smooth) });
+  bind: (options) => () => {
+    window.scrollBy({
+      top: options.amount,
+      behavior: behavior(options.smooth),
+    });
   },
 });
 
-export const scrollUp = defineAction<ByPixel>({
+export const scrollUpAction = defineAction("scrollUp", {
   scope: "global",
   description: "Scroll up by a fixed amount.",
-  pred: byPixelPred,
+  optionSchema: byPixelOptionSchema,
   defaults: { amount: 100, smooth: false },
-  meta: byPixelMeta,
-  run: (_ctx, opts) => {
-    window.scrollBy({ top: -opts.amount, behavior: behavior(opts.smooth) });
+  bind: (options) => () => {
+    window.scrollBy({
+      top: -options.amount,
+      behavior: behavior(options.smooth),
+    });
   },
 });
 
-const byPagePred = is.ObjectOf({
-  fraction: is.Number,
-  smooth: is.Boolean,
-});
-type ByPage = PredicateType<typeof byPagePred>;
-
-const byPageMeta = {
+const byPageOptionSchema = {
   fraction: {
     kind: "number",
     label: "Page fraction (0..1)",
@@ -60,64 +51,55 @@ const byPageMeta = {
   smooth: { kind: "boolean", label: "Smooth scroll" },
 } as const;
 
-export const scrollPageDown = defineAction<ByPage>({
+export const scrollPageDownAction = defineAction("scrollPageDown", {
   scope: "global",
   description: "Scroll down by a fraction of the viewport height.",
-  pred: byPagePred,
+  optionSchema: byPageOptionSchema,
   defaults: { fraction: 0.85, smooth: false },
-  meta: byPageMeta,
-  run: (_ctx, opts) => {
+  bind: (options) => () => {
     window.scrollBy({
-      top: window.innerHeight * opts.fraction,
-      behavior: behavior(opts.smooth),
+      top: window.innerHeight * options.fraction,
+      behavior: behavior(options.smooth),
     });
   },
 });
 
-export const scrollPageUp = defineAction<ByPage>({
+export const scrollPageUpAction = defineAction("scrollPageUp", {
   scope: "global",
   description: "Scroll up by a fraction of the viewport height.",
-  pred: byPagePred,
+  optionSchema: byPageOptionSchema,
   defaults: { fraction: 0.85, smooth: false },
-  meta: byPageMeta,
-  run: (_ctx, opts) => {
+  bind: (options) => () => {
     window.scrollBy({
-      top: -window.innerHeight * opts.fraction,
-      behavior: behavior(opts.smooth),
+      top: -window.innerHeight * options.fraction,
+      behavior: behavior(options.smooth),
     });
   },
 });
 
-const toEdgePred = is.ObjectOf({
-  smooth: is.Boolean,
-});
-type ToEdge = PredicateType<typeof toEdgePred>;
-
-const toEdgeMeta = {
+const toEdgeOptionSchema = {
   smooth: { kind: "boolean", label: "Smooth scroll" },
 } as const;
 
-export const scrollToTop = defineAction<ToEdge>({
+export const scrollToTopAction = defineAction("scrollToTop", {
   scope: "global",
   description: "Jump to the very top of the page.",
-  pred: toEdgePred,
+  optionSchema: toEdgeOptionSchema,
   defaults: { smooth: false },
-  meta: toEdgeMeta,
-  run: (_ctx, opts) => {
-    window.scrollTo({ top: 0, behavior: behavior(opts.smooth) });
+  bind: (options) => () => {
+    window.scrollTo({ top: 0, behavior: behavior(options.smooth) });
   },
 });
 
-export const scrollToBottom = defineAction<ToEdge>({
+export const scrollToBottomAction = defineAction("scrollToBottom", {
   scope: "global",
   description: "Jump to the very bottom of the page.",
-  pred: toEdgePred,
+  optionSchema: toEdgeOptionSchema,
   defaults: { smooth: false },
-  meta: toEdgeMeta,
-  run: (_ctx, opts) => {
+  bind: (options) => () => {
     window.scrollTo({
       top: document.documentElement.scrollHeight,
-      behavior: behavior(opts.smooth),
+      behavior: behavior(options.smooth),
     });
   },
 });

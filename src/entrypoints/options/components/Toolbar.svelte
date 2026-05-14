@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SCOPES, type ScopeId } from "../../../lib/scopes";
+  import { SCOPES, type ScopeId } from "@/lib/scopes";
 
   type Props = {
     currentScope: ScopeId;

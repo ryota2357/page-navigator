@@ -1,12 +1,9 @@
 <script lang="ts">
-  import type { Action } from "../../../lib/action";
-  import {
-    ACTIONS,
-    type ActionId,
-    actionDisplay,
-    isActionId,
-  } from "../../../lib/scopes";
-  import type { Binding } from "../../../lib/storage";
+  import type { Action } from "@/lib/action";
+  import type { Trigger } from "@/lib/keys";
+  import { ACTIONS, type ValidActionId } from "@/lib/scopes/actions";
+  import type { Binding } from "@/lib/storage/bindings";
+  import { actionDisplay } from "../actionDisplay";
   import ActionPickerModal from "./ActionPickerModal.svelte";
   import OptionsForm from "./OptionsForm.svelte";
   import TriggerInput from "./TriggerInput.svelte";
@@ -19,21 +16,19 @@
 
   const { binding, onUpdate, onDelete }: Props = $props();
 
-  const action = $derived(
-    isActionId(binding.actionId) ? ACTIONS[binding.actionId] : null,
-  );
-  const display = $derived(
-    isActionId(binding.actionId) ? actionDisplay(binding.actionId) : null,
-  );
+  // `binding.actionId` is a registered ValidActionId, so the lookup and the
+  // display formatting always resolve.
+  const action = $derived(ACTIONS[binding.actionId]);
+  const display = $derived(actionDisplay(binding.actionId));
 
   let pickerOpen = $state(false);
 
-  function pickAction(nextId: ActionId, next: Action) {
+  function pickAction(nextId: ValidActionId, next: Action) {
     pickerOpen = false;
     if (nextId === binding.actionId) return;
     // Reset options to the new action's defaults — different actions have
     // different options shapes, so carrying values over would just produce
-    // invalid bindings the loader would have to repair on the next read.
+    // bindings the loader drops on the next read.
     onUpdate({
       ...binding,
       actionId: nextId,
@@ -41,7 +36,7 @@
     });
   }
 
-  function onTriggersChange(triggers: string[][]) {
+  function onTriggersChange(triggers: Trigger[]) {
     onUpdate({ ...binding, triggers });
   }
 
@@ -68,27 +63,21 @@
       }}
       title="Change action"
     >
-      {#if display}
-        <span class="action-name">{display.name}</span>
-        {#if display.badgeLabel}
-          <span class="badge site">{display.badgeLabel}</span>
-        {/if}
-      {:else}
-        <span class="action-name placeholder">Pick an action…</span>
+      <span class="action-name">{display.name}</span>
+      {#if display.badgeLabel}
+        <span class="badge site">{display.badgeLabel}</span>
       {/if}
       <span class="chev">▾</span>
     </button>
   </div>
 
   <div class="cell options">
-    {#if action}
-      <OptionsForm
-        meta={action.meta}
-        defaults={action.defaults}
-        values={binding.options}
-        onChange={onOptionsChange}
-      />
-    {/if}
+    <OptionsForm
+      optionSchema={action.optionSchema}
+      defaults={action.defaults}
+      values={binding.options}
+      onChange={onOptionsChange}
+    />
   </div>
 
   <div class="cell row-actions">
@@ -168,10 +157,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     flex: 1;
-  }
-  .action-name.placeholder {
-    color: #8a857a;
-    font-family: inherit;
   }
   .badge.site {
     display: inline-flex;

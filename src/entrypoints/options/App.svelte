@@ -1,19 +1,17 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import {
-    ACTION_IDS,
-    ACTIONS,
-    isCompatibleScope,
-    type ScopeId,
-  } from "../../lib/scopes";
+  import type { ScopeId } from "@/lib/scopes";
+  import { ACTION_IDS, ACTIONS } from "@/lib/scopes/actions";
   import {
     type Binding,
     bindingsItem,
     loadBindings,
+  } from "@/lib/storage/bindings";
+  import {
     loadSettings,
     type Settings,
     settingsItem,
-  } from "../../lib/storage";
+  } from "@/lib/storage/settings";
   import BindingsList from "./components/BindingsList.svelte";
   import SettingsSection from "./components/SettingsSection.svelte";
   import Sidebar from "./components/Sidebar.svelte";
@@ -57,8 +55,10 @@
   });
 
   async function addBinding() {
-    const seedId = ACTION_IDS.find((id) =>
-      isCompatibleScope(ACTIONS[id].scope, selectedScope),
+    // A global action works under any scope; a site action only under its own.
+    const seedId = ACTION_IDS.find(
+      (id) =>
+        ACTIONS[id].scope === "global" || ACTIONS[id].scope === selectedScope,
     );
     if (!seedId) return;
     const seed = ACTIONS[seedId];

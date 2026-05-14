@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { parseTrigger } from "../keys";
 import type { ScopeId } from "../scopes";
 import type { Binding } from "../storage/bindings";
 import { activeBindings } from "./active";
 
+// `triggers` arrive as plain strings; `parseTrigger` mints the branded
+// canonical Trigger the Binding type requires.
 function bind(
   id: string,
   scope: ScopeId,
@@ -12,7 +15,7 @@ function bind(
   return {
     id,
     scope,
-    triggers,
+    triggers: triggers.map(parseTrigger),
     actionId: opts.actionId ?? "scrollDown",
     options: opts.options ?? {},
     enabled: opts.enabled ?? true,

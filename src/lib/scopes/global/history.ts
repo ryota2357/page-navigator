@@ -1,26 +1,21 @@
-import { is } from "@core/unknownutil";
-import { defineAction } from "../../action";
+import { defineAction } from "@/lib/action";
 
-const noOptionsPred = is.ObjectOf({});
-
-export const goHistoryBack = defineAction({
+export const goHistoryBackAction = defineAction("goHistoryBack", {
   scope: "global",
   description: "Go back one step in the browser history.",
-  pred: noOptionsPred,
+  optionSchema: {},
   defaults: {},
-  meta: {},
-  run: () => {
+  bind: () => () => {
     window.history.back();
   },
 });
 
-export const goHistoryForward = defineAction({
+export const goHistoryForwardAction = defineAction("goHistoryForward", {
   scope: "global",
   description: "Go forward one step in the browser history.",
-  pred: noOptionsPred,
+  optionSchema: {},
   defaults: {},
-  meta: {},
-  run: () => {
+  bind: () => () => {
     window.history.forward();
   },
 });

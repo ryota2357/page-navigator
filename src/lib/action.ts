@@ -1,64 +1,113 @@
-import type { Predicate } from "@core/unknownutil";
+import { is } from "@core/unknownutil";
+import type { ScopeId } from "./scopes";
 
-export type ScopeId = "global" | "google";
+export type ActionInstance = {
+  id: string;
+  scope: ScopeId;
+  option: Record<string, number | boolean | string>;
+  invoke: () => void | Promise<void>;
+};
 
-export type FieldMeta =
+export type Action<
+  S extends Record<string, OptionSchema> = Record<string, OptionSchema>,
+> = {
+  id: string;
+  scope: ScopeId;
+  description: string;
+  optionSchema: S;
+  defaults: OptionValue<S>;
+  build: (option: Record<PropertyKey, unknown>) => ActionInstance | null;
+};
+
+export type OptionSchema = {
+  label: string;
+  description?: string;
+} & (
   | {
       kind: "number";
-      label: string;
-      description?: string;
       min?: number;
       max?: number;
       step?: number;
     }
   | {
       kind: "boolean";
-      label: string;
-      description?: string;
     }
   | {
       kind: "select";
-      label: string;
-      description?: string;
-      options: string[];
-    };
+      options: readonly string[];
+    }
+);
 
-export type ActionContext = {
-  bindingId: string;
-  scope: ScopeId;
+export type OptionValue<S extends Record<string, OptionSchema>> = {
+  [K in keyof S]: S[K] extends { kind: "number" }
+    ? number
+    : S[K] extends { kind: "boolean" }
+      ? boolean
+      : S[K] extends { kind: "select"; options: readonly (infer V)[] }
+        ? V
+        : never;
 };
 
-// Uniform action shape that the runtime (dispatcher, loader, UI) sees:
-// options are erased to a Record so the registry is heterogeneous-O-safe.
-// Use defineAction() to declare one — its closure carries the typed run()
-// body and the pred-narrowing happens inside invoke(), so callers never see
-// the option type variance.
-export type Action = {
-  scope: ScopeId;
-  description: string;
-  defaults: Record<string, unknown>;
-  meta: Record<string, FieldMeta>;
-  validate: (opts: unknown) => boolean;
-  invoke: (ctx: ActionContext, opts: unknown) => void | Promise<void>;
-};
+function isOptionValue<S extends Record<string, OptionSchema>>(
+  values: Record<string, unknown>,
+  schema: S,
+): values is OptionValue<S> {
+  for (const key of Object.keys(schema)) {
+    const value = values[key];
+    switch (schema[key].kind) {
+      case "number":
+        if (!is.Number(value) || !Number.isFinite(value)) return false;
+        if (schema[key].min !== undefined && value < schema[key].min)
+          return false;
+        if (schema[key].max !== undefined && value > schema[key].max)
+          return false;
+        break;
+      case "boolean":
+        if (!is.Boolean(value)) return false;
+        break;
+      case "select":
+        if (!is.String(value) || !schema[key].options.includes(value)) {
+          return false;
+        }
+        break;
+      default:
+        schema[key] satisfies never;
+    }
+  }
+  return true;
+}
 
-export function defineAction<O extends Record<string, unknown>>(spec: {
-  scope: ScopeId;
-  description: string;
-  pred: Predicate<O>;
-  defaults: O;
-  meta: { [K in keyof O]: FieldMeta };
-  run: (ctx: ActionContext, opts: O) => void | Promise<void>;
-}): Action {
+export function defineAction<
+  const Id extends string,
+  S extends Record<string, OptionSchema>,
+>(
+  id: Id,
+  spec: {
+    scope: ScopeId;
+    description: string;
+    optionSchema: S;
+    defaults: OptionValue<S>;
+    bind: (options: OptionValue<S>) => () => void | Promise<void>;
+  },
+): Action<S> & { id: Id } {
   return {
+    id,
     scope: spec.scope,
     description: spec.description,
+    optionSchema: spec.optionSchema,
     defaults: spec.defaults,
-    meta: spec.meta,
-    validate: spec.pred,
-    invoke: (ctx, opts) => {
-      if (!spec.pred(opts)) return;
-      return spec.run(ctx, opts);
+    build: (option: Record<string, unknown> = {}): ActionInstance | null => {
+      const optv: Record<string, unknown> = {};
+      for (const key of Object.keys(spec.optionSchema)) {
+        optv[key] = key in option ? option[key] : spec.defaults[key];
+      }
+      if (!isOptionValue(optv, spec.optionSchema)) return null;
+      return {
+        id,
+        scope: spec.scope,
+        option: optv as Record<string, number | boolean | string>,
+        invoke: spec.bind(optv),
+      };
     },
   };
 }

@@ -1,18 +1,11 @@
-import type { KeyToken } from "../keys/types";
+import type { KeyToken } from "../keys";
 import { log } from "../log";
-import { ACTIONS } from "../scopes";
 import type { Binding } from "../storage/bindings";
 import { compileTrie, type Leaf, type TrieNode } from "./trie";
 
-// Outcome of feeding one normalized KeyToken to the dispatcher.
-//   "fired"    — leaf reached and the action ran (or a conflict was logged).
-//   "consumed" — partial-prefix match; awaiting more keys.
-//   "passed"   — no match at the current state; pass through to the page.
-//
-// The content-script entry point uses this to decide whether to call
-// `event.preventDefault()`. The dispatcher consumes intermediate keys of a
-// sequence — once a sequence has started, subsequent keys are ours until we
-// fire or abort.
+// "passed" is the only outcome where the content script lets the keystroke
+// reach the page; "fired" and "consumed" both swallow it. "consumed" keeps
+// the cursor mid-sequence waiting for more keys.
 export type FeedResult = "fired" | "consumed" | "passed";
 
 type TimerHandle = ReturnType<typeof setTimeout>;
@@ -28,8 +21,7 @@ export class Dispatcher {
   }
 
   rebuild(bindings: ReadonlyArray<Binding>): void {
-    // Mid-sequence rebuild: drop any in-flight cursor — the new trie may not
-    // contain the path the user was walking.
+    // The new trie may not contain the path the cursor was walking.
     this.resetCursor();
     this.trie = compileTrie(bindings);
   }
@@ -43,9 +35,9 @@ export class Dispatcher {
     const next = current.children?.get(token);
 
     if (!next) {
-      // No child at the cursor — abort the sequence (if any) and pass the key
-      // through. Mid-sequence: previous keys were already swallowed, this
-      // trailing key is the user's "abort" key. At root: unbound first key.
+      // Mid-sequence: the unmatched key acts as the user's abort signal and
+      // is passed through. Earlier keys of the aborted sequence stay
+      // swallowed — we can't un-preventDefault them.
       this.resetCursor();
       return "passed";
     }
@@ -59,8 +51,8 @@ export class Dispatcher {
       return "fired";
     }
 
-    // Pure-prefix node (children only) or ambiguous (leaf+children) — walk
-    // in and start the disambiguation timer.
+    // Ambiguous (leaf + children): wait for either another key or the
+    // disambiguation timeout to decide whether to fire the leaf.
     this.cursor = next;
     this.scheduleTimeout();
     return "consumed";
@@ -77,7 +69,6 @@ export class Dispatcher {
   private scheduleTimeout(): void {
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = setTimeout(() => {
-      // Timeout while at a leaf+children node fires the leaf.
       const leaf = this.cursor?.leaf;
       if (leaf) this.fire(leaf);
       this.resetCursor();
@@ -97,12 +88,8 @@ export class Dispatcher {
       log.warn("conflict — not firing", { bindingIds: leaf.bindingIds });
       return;
     }
-    const action = ACTIONS[leaf.actionId];
     try {
-      const ret = action.invoke(
-        { bindingId: leaf.bindingId, scope: leaf.scope },
-        leaf.options,
-      );
+      const ret = leaf.instance.invoke();
       if (ret instanceof Promise) {
         ret.catch((e) => {
           log.error("action threw", {

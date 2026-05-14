@@ -30,13 +30,10 @@ export function canonicalizeKeyName(raw: string): string {
   return LOWER_TO_CANONICAL.get(raw.toLowerCase()) ?? raw;
 }
 
-// Used by the parser to reject obviously malformed names (e.g. "C-") instead
-// of silently passing them through.
 export function isKnownNonPrintable(name: string): boolean {
   return LOWER_TO_CANONICAL.has(name.toLowerCase());
 }
 
-// Inside <…> we always use "Space" instead of a literal space character so
-// `<C-Space>` reads naturally instead of `<C- >`.
+// Space gets a name inside <…> so `<C-Space>` doesn't render as `<C- >`.
 export const SPACE_BARE = " ";
 export const SPACE_WRAPPED = "Space";

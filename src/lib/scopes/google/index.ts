@@ -1,14 +1,13 @@
-import { focusNextResult, focusPrevResult, openResult } from "./actions";
+import * as actions from "./actions";
 
 export const googleScope = {
   label: "Google",
-  // Accepts any TLD (.com / .co.jp / .de / …) so users on a local Google
-  // domain are covered.
+  // Accepts any TLD (.com / .co.jp / .de / …) so users on a local Google domain are covered.
   urlPattern: /^https:\/\/www\.google\..+\/search/,
 } as const;
 
-export const googleActions = {
-  "google.focusNextResult": focusNextResult,
-  "google.focusPrevResult": focusPrevResult,
-  "google.openResult": openResult,
-};
+export const googleActions = [
+  actions.focusNextResultAction,
+  actions.focusPrevResultAction,
+  actions.openResultAction,
+] as const;

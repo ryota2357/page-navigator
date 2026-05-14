@@ -1,21 +1,16 @@
 import { isKnownNonPrintable } from "./canonical";
-import { type Mods, serialize } from "./serialize";
-import type { KeyToken } from "./types";
-
-// Lenient parser: re-canonicalizes any user-authored KeyToken-like string.
-// Accepts case-insensitive content inside <…> for both modifier letters and
-// printables (so `<C-J>` = `<c-j>` = Ctrl+j). Modifier order doesn't matter.
-//
-// Throws on syntactically malformed input — the storage loader catches and
-// drops the offending row.
+import { encodeKeyToken } from "./encode";
+import type { KeyToken, Trigger } from "./token";
 
 const WRAPPED_RE = /^<((?:[ACMSacms]-)+)?(.+)>$/;
 const MODIFIER_LETTERS = new Set(["A", "C", "M", "S"]);
 
-function emptyMods(): Mods {
-  return { alt: false, ctrl: false, meta: false, shift: false };
+function noMods() {
+  return { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 }
 
+// Lenient: case-insensitive modifiers/letters, any modifier order.
+// Throws on malformed input — `loadBindings` catches and drops the row.
 export function parse(input: string): KeyToken {
   if (input.length === 0) throw new Error("empty key token");
 
@@ -23,14 +18,14 @@ export function parse(input: string): KeyToken {
     if (input.length !== 1) {
       throw new Error(`bare key token must be a single character: ${input}`);
     }
-    return serialize(emptyMods(), input);
+    return encodeKeyToken({ ...noMods(), key: input });
   }
 
   const match = WRAPPED_RE.exec(input);
   if (!match) throw new Error(`malformed key token: ${input}`);
 
   const [, modPart, keyPart] = match;
-  const mods = emptyMods();
+  const mods = noMods();
 
   if (modPart) {
     for (const seg of modPart.split("-")) {
@@ -41,16 +36,16 @@ export function parse(input: string): KeyToken {
       }
       switch (letter) {
         case "A":
-          mods.alt = true;
+          mods.altKey = true;
           break;
         case "C":
-          mods.ctrl = true;
+          mods.ctrlKey = true;
           break;
         case "M":
-          mods.meta = true;
+          mods.metaKey = true;
           break;
         case "S":
-          mods.shift = true;
+          mods.shiftKey = true;
           break;
       }
     }
@@ -63,9 +58,9 @@ export function parse(input: string): KeyToken {
     throw new Error(`unknown key name in token: <${modPart ?? ""}${keyPart}>`);
   }
 
-  return serialize(mods, key);
+  return encodeKeyToken({ ...mods, key });
 }
 
-export function parseTrigger(tokens: string[]): KeyToken[] {
+export function parseTrigger(tokens: string[]): Trigger {
   return tokens.map(parse);
 }

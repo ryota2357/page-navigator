@@ -1,12 +1,11 @@
-import { is, type PredicateType } from "@core/unknownutil";
-import { defineAction } from "../../action";
+import { defineAction } from "@/lib/action";
 import { setHighlight } from "./highlight";
 import { findResultLinks } from "./selectors";
 
-// Module-level cursor. We sync from document.activeElement first so click/Tab
-// don't desync, then fall back to the last cursor value.
 let cursorIndex = -1;
 
+// Read activeElement first so the cursor stays aligned after a click or Tab
+// landed on a different result outside of our cursor moves.
 function currentIndex(links: ReadonlyArray<HTMLAnchorElement>): number {
   const active = document.activeElement;
   if (active instanceof HTMLAnchorElement) {
@@ -36,49 +35,40 @@ function moveCursor(delta: number, wrap: boolean): void {
   setHighlight(el);
 }
 
-const focusPred = is.ObjectOf({ wrap: is.Boolean });
-type FocusOptions = PredicateType<typeof focusPred>;
-
-const focusMeta = {
+const focusOptionSchema = {
   wrap: { kind: "boolean", label: "Wrap around" },
 } as const;
 
-export const focusNextResult = defineAction<FocusOptions>({
+export const focusNextResultAction = defineAction("google.focusNextResult", {
   scope: "google",
   description: "Move focus to the next search result.",
-  pred: focusPred,
+  optionSchema: focusOptionSchema,
   defaults: { wrap: false },
-  meta: focusMeta,
-  run: (_ctx, opts) => moveCursor(+1, opts.wrap),
+  bind: (options) => () => moveCursor(+1, options.wrap),
 });
 
-export const focusPrevResult = defineAction<FocusOptions>({
+export const focusPrevResultAction = defineAction("google.focusPrevResult", {
   scope: "google",
   description: "Move focus to the previous search result.",
-  pred: focusPred,
+  optionSchema: focusOptionSchema,
   defaults: { wrap: false },
-  meta: focusMeta,
-  run: (_ctx, opts) => moveCursor(-1, opts.wrap),
+  bind: (options) => () => moveCursor(-1, options.wrap),
 });
 
-const openPred = is.ObjectOf({ newTab: is.Boolean });
-type OpenOptions = PredicateType<typeof openPred>;
-
-export const openResult = defineAction<OpenOptions>({
+export const openResultAction = defineAction("google.openResult", {
   scope: "google",
   description: "Activate the currently focused search result.",
-  pred: openPred,
+  optionSchema: { newTab: { kind: "boolean", label: "Open in new tab" } },
   defaults: { newTab: false },
-  meta: { newTab: { kind: "boolean", label: "Open in new tab" } },
-  run: (_ctx, opts) => {
+  bind: (options) => () => {
     const links = findResultLinks();
     if (links.length === 0) return;
     const idx = currentIndex(links);
     const el = links[idx < 0 ? 0 : idx];
 
-    if (opts.newTab) {
-      // Forged Ctrl/Cmd-click — the browser applies its own modifier-click
-      // semantics (background tab, etc.) for us.
+    if (options.newTab) {
+      // Forged modifier-click — the browser handles background-tab semantics
+      // for us. ctrl+meta covers both Linux/Windows and macOS.
       el.dispatchEvent(
         new MouseEvent("click", {
           bubbles: true,

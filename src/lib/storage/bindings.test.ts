@@ -1,59 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { fakeBrowser } from "wxt/testing/fake-browser";
-import {
-  type Binding,
-  bindingsItem,
-  clampOptions,
-  loadBindings,
-} from "./bindings";
-import { loadSettings, settingsItem } from "./settings";
+import { parseTrigger } from "../keys";
+import { type Binding, bindingsItem, loadBindings } from "./bindings";
 
 beforeEach(() => {
   fakeBrowser.reset();
 });
 
-// Seed the underlying storage with a raw shape that bypasses Binding's type
-// guard so we can exercise the loader's drop / repair paths. Reads go
-// through the same key the typed item uses, so loadBindings() picks it up.
 async function seedRawBindings(rows: ReadonlyArray<unknown>): Promise<void> {
   await fakeBrowser.storage.local.set({ bindings: rows });
 }
-
-async function seedRawSettings(value: unknown): Promise<void> {
-  await fakeBrowser.storage.local.set({ settings: value });
-}
-
-describe("clampOptions", () => {
-  it("clamps below min, above max; leaves in-range values alone", () => {
-    const opts: Record<string, unknown> = { amount: -5, fraction: 5 };
-    const meta = {
-      amount: { kind: "number" as const, label: "", min: 1, max: 100 },
-      fraction: { kind: "number" as const, label: "", min: 0.1, max: 1 },
-    };
-    const changed = clampOptions(opts, meta);
-    expect(changed).toBe(true);
-    expect(opts.amount).toBe(1);
-    expect(opts.fraction).toBe(1);
-  });
-
-  it("returns false when nothing changes", () => {
-    const opts: Record<string, unknown> = { amount: 50 };
-    const meta = {
-      amount: { kind: "number" as const, label: "", min: 1, max: 100 },
-    };
-    expect(clampOptions(opts, meta)).toBe(false);
-    expect(opts.amount).toBe(50);
-  });
-
-  it("leaves non-number / non-finite values for the predicate to reject", () => {
-    const opts: Record<string, unknown> = { amount: "huge", n: Number.NaN };
-    const meta = {
-      amount: { kind: "number" as const, label: "", min: 1, max: 100 },
-      n: { kind: "number" as const, label: "", min: 0, max: 1 },
-    };
-    expect(clampOptions(opts, meta)).toBe(false);
-  });
-});
 
 describe("loadBindings", () => {
   it("returns [] for empty storage", async () => {
@@ -65,7 +20,7 @@ describe("loadBindings", () => {
     const seed: Binding = {
       id: "b1",
       scope: "global",
-      triggers: [["j"]],
+      triggers: [parseTrigger(["j"])],
       actionId: "scrollDown",
       options: { amount: 100, smooth: false },
       enabled: true,
@@ -88,10 +43,11 @@ describe("loadBindings", () => {
     ]);
     const result = await loadBindings();
     expect(result).toEqual([]);
-    expect(await bindingsItem.getValue()).toEqual([]);
   });
 
-  it("canonicalizes lenient triggers and writes back", async () => {
+  // loadBindings validates on read but never writes back: the canonical form
+  // only exists on the returned in-memory copy.
+  it("canonicalizes lenient triggers in memory without writing back", async () => {
     await seedRawBindings([
       {
         id: "b1",
@@ -104,8 +60,8 @@ describe("loadBindings", () => {
     ]);
     const result = await loadBindings();
     expect(result[0].triggers).toEqual([["<C-j>"]]);
-    const written = await bindingsItem.getValue();
-    expect(written[0].triggers).toEqual([["<C-j>"]]);
+    const stored = await bindingsItem.getValue();
+    expect(stored[0].triggers).toEqual([["<c-j>"]]);
   });
 
   it("fills missing option fields from defaults", async () => {
@@ -138,23 +94,23 @@ describe("loadBindings", () => {
     expect(result[0].options).toEqual({ amount: 100, smooth: false });
   });
 
-  it("clamps out-of-range numeric options and writes back", async () => {
+  it("drops a binding with an out-of-range numeric option", async () => {
     await seedRawBindings([
       {
         id: "b1",
         scope: "global",
         triggers: [["j"]],
         actionId: "scrollDown",
+        // `amount` min is 1 — the action's schema rejects it outright.
         options: { amount: -999, smooth: false },
         enabled: true,
       },
     ]);
     const result = await loadBindings();
-    expect(result[0].options.amount).toBe(1);
-    expect((await bindingsItem.getValue())[0].options.amount).toBe(1);
+    expect(result).toEqual([]);
   });
 
-  it("drops a binding whose options fail the predicate", async () => {
+  it("drops a binding whose options fail the meta schema", async () => {
     await seedRawBindings([
       {
         id: "b1",
@@ -173,7 +129,7 @@ describe("loadBindings", () => {
     const seed: Binding = {
       id: "b1",
       scope: "google",
-      triggers: [["j"]],
+      triggers: [parseTrigger(["j"])],
       actionId: "google.focusNextResult",
       options: { wrap: false },
       enabled: true,
@@ -196,7 +152,6 @@ describe("loadBindings", () => {
     ]);
     const result = await loadBindings();
     expect(result).toEqual([]);
-    expect(await bindingsItem.getValue()).toEqual([]);
   });
 
   it("drops a binding with malformed structure", async () => {
@@ -211,33 +166,5 @@ describe("loadBindings", () => {
     ]);
     const result = await loadBindings();
     expect(result).toEqual([]);
-  });
-});
-
-describe("loadSettings", () => {
-  it("returns the stored value when already in range", async () => {
-    await settingsItem.setValue({ sequenceTimeoutMs: 750 });
-    const result = await loadSettings();
-    expect(result).toEqual({ sequenceTimeoutMs: 750 });
-  });
-
-  it("clamps below 100 to 100 and writes back", async () => {
-    await settingsItem.setValue({ sequenceTimeoutMs: -1 });
-    const result = await loadSettings();
-    expect(result.sequenceTimeoutMs).toBe(100);
-    expect((await settingsItem.getValue()).sequenceTimeoutMs).toBe(100);
-  });
-
-  it("clamps absurdly large values to 60000 and writes back", async () => {
-    await settingsItem.setValue({ sequenceTimeoutMs: 10_000_000 });
-    const result = await loadSettings();
-    expect(result.sequenceTimeoutMs).toBe(60_000);
-  });
-
-  it("repairs NaN-like non-numbers to fallback (1000)", async () => {
-    await seedRawSettings({ sequenceTimeoutMs: "fast" });
-    const result = await loadSettings();
-    expect(result.sequenceTimeoutMs).toBe(1000);
-    expect((await settingsItem.getValue()).sequenceTimeoutMs).toBe(1000);
   });
 });

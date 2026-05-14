@@ -1,21 +1,19 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import type { Action, FieldMeta } from "../../../lib/action";
+  import type { Action, OptionSchema } from "@/lib/action";
+  import { SCOPES, type ScopeId } from "@/lib/scopes";
   import {
     ACTION_IDS,
     ACTIONS,
-    type ActionId,
-    actionDisplay,
-    isCompatibleScope,
-    SCOPES,
-    type ScopeId,
-  } from "../../../lib/scopes";
+    type ValidActionId,
+  } from "@/lib/scopes/actions";
+  import { actionDisplay } from "../actionDisplay";
 
   type Props = {
     bindingScope: ScopeId;
-    currentActionId: string;
+    currentActionId: ValidActionId;
     onClose: () => void;
-    onPick: (id: ActionId, action: Action) => void;
+    onPick: (id: ValidActionId, action: Action) => void;
   };
 
   const { bindingScope, currentActionId, onClose, onPick }: Props = $props();
@@ -24,12 +22,13 @@
   let focusIdx = $state(0);
   let inputEl: HTMLInputElement | undefined = $state();
 
-  // Same predicate the dispatcher uses, so the picker never offers an action
-  // the runtime would refuse.
+  // A global action works under any scope; a site action only under its own —
+  // the picker must never offer an action the runtime would refuse.
   const compatibleIds = $derived(
-    ACTION_IDS.filter((id) =>
-      isCompatibleScope(ACTIONS[id].scope, bindingScope),
-    ),
+    ACTION_IDS.filter((id) => {
+      const scope = ACTIONS[id].scope;
+      return scope === "global" || scope === bindingScope;
+    }),
   );
 
   // Substring match across id and description.
@@ -49,14 +48,14 @@
   // that's why the user opened the picker on a site scope. Per-iteration
   // values are pre-derived (Biome flags {@const} in templates).
   type Item = {
-    id: ActionId;
+    id: ValidActionId;
     action: Action;
     idx: number;
     name: string;
     badgeLabel: string | null;
   };
   const items = $derived.by<Item[]>(() => {
-    const globalLast = (id: ActionId) =>
+    const globalLast = (id: ValidActionId) =>
       ACTIONS[id].scope === "global" ? 1 : 0;
     const ordered = filteredIds
       .slice()
@@ -75,16 +74,16 @@
 
   const focused = $derived<Item | undefined>(items[focusIdx]);
 
-  type MetaEntry = {
+  type SchemaEntry = {
     key: string;
-    kind: FieldMeta["kind"];
+    kind: OptionSchema["kind"];
     defaultValue: unknown;
   };
-  const focusedMeta = $derived<MetaEntry[]>(
+  const focusedSchema = $derived<SchemaEntry[]>(
     focused
-      ? Object.entries(focused.action.meta).map(([key, m]) => ({
+      ? Object.entries(focused.action.optionSchema).map(([key, schema]) => ({
           key,
-          kind: m.kind,
+          kind: schema.kind,
           defaultValue: focused.action.defaults[key],
         }))
       : [],
@@ -212,11 +211,11 @@
           <p class="desc">{focused.action.description}</p>
 
           <h3 class="opts-label">Options</h3>
-          {#if focusedMeta.length === 0}
+          {#if focusedSchema.length === 0}
             <p class="opts-none">(no options)</p>
           {:else}
             <ul class="opts">
-              {#each focusedMeta as f (f.key)}
+              {#each focusedSchema as f (f.key)}
                 <li>
                   <span class="opt-key">{f.key}</span>
                   <span class="opt-kind">: {f.kind}</span>

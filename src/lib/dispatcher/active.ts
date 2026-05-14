@@ -1,4 +1,4 @@
-import type { Trigger } from "../keys/types";
+import type { Trigger } from "../keys";
 import type { ScopeId } from "../scopes";
 import type { Binding } from "../storage/bindings";
 

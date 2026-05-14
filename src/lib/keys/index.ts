@@ -1,4 +1,4 @@
-export { normalize } from "./normalize";
+export { encodeKeyToken } from "./encode";
+export { isImeComposing, isModifierKey } from "./event";
 export { parse, parseTrigger } from "./parse";
-export { type Mods, serialize } from "./serialize";
-export type { KeyToken, Trigger } from "./types";
+export { isKeyToken, isTrigger, type KeyToken, type Trigger } from "./token";

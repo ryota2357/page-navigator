@@ -1,14 +1,16 @@
-import type { KeyToken } from "../keys/types";
+import type { ActionInstance } from "../action";
+import type { KeyToken } from "../keys";
 import { log } from "../log";
-import type { ActionId, ScopeId } from "../scopes";
+import type { ScopeId } from "../scopes";
+import { ACTIONS, type ValidActionId } from "../scopes/actions";
 import type { Binding } from "../storage/bindings";
 
 type ConcreteLeaf = {
   conflicted?: false;
   bindingId: string;
   scope: ScopeId;
-  actionId: ActionId;
-  options: unknown;
+  actionId: ValidActionId;
+  instance: ActionInstance;
 };
 
 type ConflictedLeaf = {
@@ -23,18 +25,27 @@ export type TrieNode = {
   children?: Map<KeyToken, TrieNode>;
 };
 
-// Two bindings in the same scope with the same trigger become a conflicted
-// leaf — the dispatcher logs and drops instead of firing either. Cross-scope
-// "same trigger" doesn't reach the trie because activeBindings has already
-// resolved precedence (site shadows global).
+// Same-trigger collisions within a scope produce a conflicted leaf the
+// dispatcher refuses to fire. Cross-scope collisions never reach here —
+// `activeBindings` shadows global with site before this is called.
 //
-// `enabled === false` rows are skipped here as the final safety net; the
-// caller's compose pass should already have filtered them out.
+// `enabled` and `build` filters here are safety nets; the loader is
+// expected to have filtered upstream. `actionId` needs no check — `Binding`
+// types it as a registered `ValidActionId`.
 export function compileTrie(bindings: ReadonlyArray<Binding>): TrieNode {
   const root: TrieNode = {};
 
   for (const b of bindings) {
     if (!b.enabled) continue;
+
+    const instance = ACTIONS[b.actionId].build(b.options);
+    if (!instance) {
+      log.warn("skipping binding: options failed validation", {
+        bindingId: b.id,
+        actionId: b.actionId,
+      });
+      continue;
+    }
 
     for (const trigger of b.triggers) {
       if (trigger.length === 0) {
@@ -58,7 +69,7 @@ export function compileTrie(bindings: ReadonlyArray<Binding>): TrieNode {
           bindingId: b.id,
           scope: b.scope,
           actionId: b.actionId,
-          options: b.options,
+          instance,
         };
       } else if (node.leaf.conflicted) {
         node.leaf.bindingIds.push(b.id);

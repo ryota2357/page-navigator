@@ -1,9 +1,14 @@
 <script lang="ts">
-  import { normalize } from "../../../lib/keys";
+  import {
+    encodeKeyToken,
+    isImeComposing,
+    isModifierKey,
+    type Trigger,
+  } from "@/lib/keys";
 
   type Props = {
-    triggers: string[][];
-    onChange: (next: string[][]) => void;
+    triggers: Trigger[];
+    onChange: (next: Trigger[]) => void;
   };
 
   const { triggers, onChange }: Props = $props();
@@ -16,7 +21,7 @@
   // them as actual keys via this UI is not supported — storage edits still
   // work, and the loader canonicalises them.
   let capturing = $state(false);
-  let pending = $state<string[]>([]);
+  let pending = $state<Trigger>([]);
   let chipEl: HTMLSpanElement | undefined = $state();
 
   function enterCapture() {
@@ -58,11 +63,10 @@
       return;
     }
 
-    const token = normalize(e);
-    if (token === null) return;
+    if (isImeComposing(e) || isModifierKey(e)) return;
     e.preventDefault();
     e.stopPropagation();
-    pending = [...pending, token];
+    pending = [...pending, encodeKeyToken(e)];
   }
 
   function onPointerDown(e: PointerEvent) {

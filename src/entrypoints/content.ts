@@ -1,13 +1,60 @@
-import { activeBindings, Dispatcher } from "../lib/dispatcher";
-import { normalize } from "../lib/keys";
-import { log } from "../lib/log";
-import { resolveActiveScopes } from "../lib/scopes";
-import {
-  bindingsItem,
-  loadBindings,
-  loadSettings,
-  settingsItem,
-} from "../lib/storage";
+import { activeBindings, Dispatcher } from "@/lib/dispatcher";
+import { encodeKeyToken, isImeComposing, isModifierKey } from "@/lib/keys";
+import { log } from "@/lib/log";
+import { resolveActiveScopes } from "@/lib/scopes";
+import { bindingsItem, loadBindings } from "@/lib/storage/bindings";
+import { loadSettings, settingsItem } from "@/lib/storage/settings";
+
+export default defineContentScript({
+  matches: ["<all_urls>"],
+  // ISOLATED keeps our state out of the page's JS realm. A future MAIN-world
+  // action should use a tightly-scoped injected <script>, not switch this.
+  world: "ISOLATED",
+  async main() {
+    // Fixed at init: we don't observe SPA URL changes for rescoping yet.
+    // Google's SERP is a full nav per query so this holds in practice.
+    const activeScopes = resolveActiveScopes(location.href);
+
+    const settings = await loadSettings();
+    const allBindings = await loadBindings();
+    const dispatcher = new Dispatcher(settings.sequenceTimeoutMs);
+    dispatcher.rebuild(activeBindings(allBindings, activeScopes));
+
+    bindingsItem.watch((newValue) => {
+      const scoped = activeBindings(newValue, activeScopes);
+      dispatcher.rebuild(scoped);
+      log.debug("dispatcher rebuilt", { count: scoped.length });
+    });
+    settingsItem.watch((newValue) => {
+      dispatcher.setTimeout(newValue.sequenceTimeoutMs);
+      log.debug("sequence timeout updated", {
+        sequenceTimeoutMs: newValue.sequenceTimeoutMs,
+      });
+    });
+
+    window.addEventListener(
+      "keydown",
+      (event) => {
+        if (!event.isTrusted) return;
+        if (isImeComposing(event) || isModifierKey(event)) return;
+        if (isEditable(deepActiveElement())) return;
+
+        const result = dispatcher.feed(encodeKeyToken(event));
+        if (result !== "passed") {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      },
+      { capture: true },
+    );
+
+    log.info("content script ready", {
+      bindings: allBindings.length,
+      activeScopes: [...activeScopes],
+      sequenceTimeoutMs: settings.sequenceTimeoutMs,
+    });
+  },
+});
 
 // Walks open shadow roots to find the actual focused element. Closed shadow
 // roots remain unreadable from extension code; we accept a small false-
@@ -31,61 +78,3 @@ function isEditable(el: Element | null): boolean {
   if (el instanceof HTMLElement && el.isContentEditable) return true;
   return false;
 }
-
-export default defineContentScript({
-  matches: ["<all_urls>"],
-  // ISOLATED keeps our state out of the page's JS realm. A future MAIN-world
-  // action should use a tightly-scoped injected <script>, not switch this.
-  world: "ISOLATED",
-  async main() {
-    // Fixed at init: we don't observe SPA URL changes for rescoping yet.
-    // Google's SERP is a full nav per query so this holds in practice.
-    const activeScopes = resolveActiveScopes(location.href);
-
-    const settings = await loadSettings();
-    const allBindings = await loadBindings();
-    const dispatcher = new Dispatcher(settings.sequenceTimeoutMs);
-    dispatcher.rebuild(activeBindings(allBindings, activeScopes));
-
-    // Two watchers so binding edits don't reset the timer state and vice-versa.
-    bindingsItem.watch(async () => {
-      const fresh = await loadBindings();
-      const scoped = activeBindings(fresh, activeScopes);
-      dispatcher.rebuild(scoped);
-      log.debug("dispatcher rebuilt", { count: scoped.length });
-    });
-    settingsItem.watch(async () => {
-      const fresh = await loadSettings();
-      dispatcher.setTimeout(fresh.sequenceTimeoutMs);
-      log.debug("sequence timeout updated", {
-        sequenceTimeoutMs: fresh.sequenceTimeoutMs,
-      });
-    });
-
-    // Capture-phase listener so the page can't grab keys before us.
-    window.addEventListener(
-      "keydown",
-      (event) => {
-        // Drop page-synthesised events; only trusted user input fires bindings.
-        if (!event.isTrusted) return;
-        if (isEditable(deepActiveElement())) return;
-
-        const token = normalize(event);
-        if (token === null) return;
-
-        const result = dispatcher.feed(token);
-        if (result !== "passed") {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-      },
-      { capture: true },
-    );
-
-    log.info("content script ready", {
-      bindings: allBindings.length,
-      activeScopes: [...activeScopes],
-      sequenceTimeoutMs: settings.sequenceTimeoutMs,
-    });
-  },
-});

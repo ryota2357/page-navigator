@@ -1,22 +1,22 @@
 <script lang="ts">
-  import type { FieldMeta } from "../../../lib/action";
+  import type { OptionSchema } from "@/lib/action";
 
   type Props = {
-    meta: Record<string, FieldMeta>;
+    optionSchema: Record<string, OptionSchema>;
     defaults: Record<string, unknown>;
     values: Record<string, unknown>;
     onChange: (next: Record<string, unknown>) => void;
   };
 
-  const { meta, defaults, values, onChange }: Props = $props();
+  const { optionSchema, defaults, values, onChange }: Props = $props();
 
   // Defaults are surfaced for fields the binding hasn't filled in yet so the
   // UI shows what the action will actually receive (the loader will fill
   // these in on next read).
   const fields = $derived(
-    Object.keys(meta).map((key) => ({
+    Object.keys(optionSchema).map((key) => ({
       key,
-      meta: meta[key],
+      schema: optionSchema[key],
       value: key in values ? values[key] : defaults[key],
     })),
   );
@@ -38,25 +38,25 @@
   <div class="form">
     {#each fields as f (f.key)}
       <label class="field">
-        <span class="key">{f.meta.label}</span>
-        {#if f.meta.kind === "number"}
+        <span class="key">{f.schema.label}</span>
+        {#if f.schema.kind === "number"}
           <input
             type="number"
             value={typeof f.value === "number" ? f.value : 0}
-            min={f.meta.min}
-            max={f.meta.max}
-            step={f.meta.step ?? 1}
+            min={f.schema.min}
+            max={f.schema.max}
+            step={f.schema.step ?? 1}
             onchange={(e) =>
               setNumber(f.key, (e.currentTarget as HTMLInputElement).value)}
           >
-        {:else if f.meta.kind === "boolean"}
+        {:else if f.schema.kind === "boolean"}
           <input
             type="checkbox"
             checked={f.value === true}
             onchange={(e) =>
               setField(f.key, (e.currentTarget as HTMLInputElement).checked)}
           >
-        {:else if f.meta.kind === "select"}
+        {:else if f.schema.kind === "select"}
           <select
             value={typeof f.value === "string" ? f.value : ""}
             onchange={(e) =>
@@ -65,7 +65,7 @@
                 (e.currentTarget as HTMLSelectElement).value,
               )}
           >
-            {#each f.meta.options as opt (opt)}
+            {#each f.schema.options as opt (opt)}
               <option value={opt}>{opt}</option>
             {/each}
           </select>
