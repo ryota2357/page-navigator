@@ -10,9 +10,8 @@
 
   let { optionSchema, defaults, values, onChange }: Props = $props();
 
-  // Defaults are surfaced for fields the binding hasn't filled in yet so the
-  // UI shows what the action will actually receive (the loader will fill
-  // these in on next read).
+  // Show the default when no explicit value is set so the row matches what
+  // the loader will fill in on the next read.
   const fields = $derived(
     Object.keys(optionSchema).map((key) => ({
       key,
@@ -27,18 +26,18 @@
 
   function setNumber(key: string, raw: string) {
     const n = Number(raw);
-    if (Number.isNaN(n)) return;
+    if (!Number.isFinite(n)) return;
     setField(key, n);
   }
 </script>
 
 {#if fields.length === 0}
-  <span class="empty">—</span>
+  <span class="empty">no options</span>
 {:else}
   <div class="form">
     {#each fields as f (f.key)}
-      <label class="field">
-        <span class="key">{f.schema.label}</span>
+      <div class="row" title={f.schema.label}>
+        <span class="key">{f.key}</span>
         {#if f.schema.kind === "number"}
           <input
             type="number"
@@ -50,12 +49,20 @@
               setNumber(f.key, (e.currentTarget as HTMLInputElement).value)}
           >
         {:else if f.schema.kind === "boolean"}
-          <input
-            type="checkbox"
-            checked={f.value === true}
-            onchange={(e) =>
-              setField(f.key, (e.currentTarget as HTMLInputElement).checked)}
-          >
+          <div class="bool">
+            <button
+              type="button"
+              class="toggle"
+              data-on={String(f.value === true)}
+              onclick={() => setField(f.key, !(f.value === true))}
+              aria-label={f.schema.label}
+            >
+              <i></i>
+            </button>
+            <span class="bool-label"
+              >{f.value === true ? "true" : "false"}</span
+            >
+          </div>
         {:else if f.schema.kind === "select"}
           <select
             value={typeof f.value === "string" ? f.value : ""}
@@ -70,45 +77,103 @@
             {/each}
           </select>
         {/if}
-      </label>
+      </div>
     {/each}
   </div>
 {/if}
 
 <style>
   .empty {
-    color: #b3ad9f;
+    color: var(--text-3);
     font-size: 11px;
+    font-family: var(--font-mono);
   }
   .form {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
-  .field {
+  .row {
     display: grid;
-    grid-template-columns: 130px 1fr;
-    align-items: center;
+    grid-template-columns: 90px 1fr;
     gap: 8px;
-    font-size: 11px;
+    align-items: center;
+    font-size: 11.5px;
   }
   .key {
-    color: #5b554d;
+    font-family: var(--font-mono);
+    color: var(--text-2);
+    font-size: 11px;
   }
-
-  input[type="number"],
-  select {
-    border: 1px solid #d8d3c8;
+  .bool {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  input[type="number"] {
+    width: 80px;
+    height: 24px;
+    padding: 0 8px;
+    border: 1px solid var(--border-input);
     border-radius: 4px;
-    padding: 3px 6px;
-    font: inherit;
-    background: #fff;
-    width: 100%;
-    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    background: var(--canvas);
+    color: var(--text-1);
   }
-  input[type="number"]:focus,
+  input[type="number"]:focus {
+    outline: 0;
+    border-color: var(--text-2);
+    background: var(--surface);
+  }
+  .bool-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
+  }
+  select {
+    height: 24px;
+    padding: 0 24px 0 8px;
+    border: 1px solid var(--border-input);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    background: var(--canvas);
+    color: var(--text-1);
+    appearance: none;
+  }
   select:focus {
-    outline: 1px solid #1a1815;
-    border-color: #1a1815;
+    outline: 0;
+    border-color: var(--text-2);
+    background: var(--surface);
+  }
+  .toggle {
+    appearance: none;
+    width: 28px;
+    height: 16px;
+    border-radius: 999px;
+    background: var(--border-strong);
+    border: 0;
+    padding: 0;
+    position: relative;
+    cursor: default;
+    transition: background 0.15s;
+  }
+  .toggle[data-on="true"] {
+    background: var(--accent);
+  }
+  .toggle i {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: transform 0.15s;
+  }
+  .toggle[data-on="true"] i {
+    transform: translateX(12px);
   }
 </style>

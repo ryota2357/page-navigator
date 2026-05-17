@@ -1,94 +1,126 @@
 <script lang="ts">
+  import type { ScopeId } from "@/lib/scopes";
   import type { Binding } from "@/lib/storage/bindings";
+  import { bindingHasConflict } from "../conflicts";
+  import { sortable } from "../sortable.svelte";
   import BindingRow from "./BindingRow.svelte";
 
+  // The new-row slot is rendered outside the sortable container so a
+  // half-typed binding never participates in reorder readback. Sortable
+  // only sees committed bindings; the new row is appended visually below.
   interface Props {
     bindings: Binding[];
-    onUpdate: (b: Binding) => void;
+    newRowId: string | null;
+    scopeId: ScopeId;
+    editingId: string | null;
+    conflicts: Set<string>;
+    onStartEdit: (id: string) => void;
+    onCommit: (next: Binding) => void;
+    onCancel: (id: string) => void;
     onDelete: (id: string) => void;
-    onAdd: () => void;
+    onReorder: (next: Binding[]) => void;
   }
 
-  let { bindings, onUpdate, onDelete, onAdd }: Props = $props();
+  let {
+    bindings,
+    newRowId,
+    scopeId,
+    editingId,
+    conflicts,
+    onStartEdit,
+    onCommit,
+    onCancel,
+    onDelete,
+    onReorder,
+  }: Props = $props();
 </script>
 
-<section class="bindings">
-  {#if bindings.length === 0}
-    <div class="empty">
-      <p>No bindings yet.</p>
-      <button type="button" class="primary" onclick={onAdd}>
-        + Add your first binding
-      </button>
-    </div>
-  {:else}
-    <div class="list">
-      <div class="header">
-        <div>Trigger</div>
-        <div>Action</div>
-        <div>Options</div>
-        <div></div>
-      </div>
-      {#each bindings as b (b.id)}
-        <BindingRow
-          binding={b}
-          onUpdate={(next) => onUpdate(next)}
-          onDelete={() => onDelete(b.id)}
-        />
-      {/each}
+<div class="bindings">
+  <div class="header">
+    <div>Trigger</div>
+    <div>Action</div>
+    <div>Options</div>
+    <div class="bh-handle"></div>
+  </div>
+  <div
+    class="rows"
+    use:sortable={{
+      items: bindings,
+      onReorder,
+      handle: ".row > .cell.handle .grip",
+    }}
+  >
+    {#each bindings as b (b.id)}
+      <BindingRow
+        binding={b}
+        {scopeId}
+        rowId={b.id}
+        editing={editingId === b.id}
+        isConflict={bindingHasConflict(b, conflicts)}
+        triggerConflicts={conflicts}
+        onStartEdit={() => onStartEdit(b.id)}
+        {onCommit}
+        onCancel={() => onCancel(b.id)}
+        onDelete={() => onDelete(b.id)}
+      />
+    {/each}
+  </div>
+  {#if newRowId !== null}
+    <div class="new-row">
+      <BindingRow
+        binding={null}
+        {scopeId}
+        rowId={newRowId}
+        editing={editingId === newRowId}
+        isConflict={false}
+        triggerConflicts={conflicts}
+        onStartEdit={() => onStartEdit(newRowId)}
+        {onCommit}
+        onCancel={() => onCancel(newRowId)}
+        onDelete={() => onDelete(newRowId)}
+      />
     </div>
   {/if}
-</section>
+</div>
 
 <style>
   .bindings {
-    padding: 20px 24px 24px;
-    flex: 1;
+    padding: 4px 28px 80px;
   }
-
-  .empty {
-    border: 1px dashed #d8d3c8;
-    border-radius: 6px;
-    padding: 36px 20px;
-    text-align: center;
-    color: #5b554d;
-  }
-  .empty p {
-    margin: 0 0 12px;
-    font-size: 12px;
-  }
-  button.primary {
-    background: #1a1815;
-    color: #faf9f7;
-    border: 1px solid #1a1815;
-    border-radius: 4px;
-    padding: 5px 12px;
-    cursor: pointer;
-    font-size: 12px;
-  }
-  button.primary:hover {
-    background: #2a2520;
-  }
-
-  .list {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #e6e3dd;
-    border-radius: 6px;
-    overflow: hidden;
-    background: #fff;
-  }
-
   .header {
     display: grid;
-    grid-template-columns: 220px 1fr 1fr 32px;
-    gap: 12px;
-    padding: 8px 12px;
-    border-bottom: 1px solid #e6e3dd;
-    background: #f4f2ee;
-    font-size: 10px;
-    font-weight: 600;
+    grid-template-columns:
+      minmax(140px, 200px)
+      minmax(0, 1fr)
+      minmax(170px, 1fr)
+      32px;
+    gap: 14px;
+    padding: 10px 12px 8px;
+    font-size: 10.5px;
+    color: var(--text-3);
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #8a857a;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+  .bh-handle {
+    color: transparent;
+  }
+  .rows {
+    display: flex;
+    flex-direction: column;
+  }
+  .new-row {
+    display: flex;
+    flex-direction: column;
+  }
+  :global(.sortable-ghost) {
+    opacity: 0.35;
+  }
+  :global(.sortable-chosen) {
+    cursor: grabbing;
+  }
+  :global(.sortable-drag) {
+    box-shadow: var(--shadow-pop);
   }
 </style>

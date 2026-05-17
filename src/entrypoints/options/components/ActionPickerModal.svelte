@@ -8,10 +8,11 @@
     type ValidActionId,
   } from "@/lib/scopes/actions";
   import { actionDisplay } from "../actionDisplay";
+  import Icon from "./Icon.svelte";
 
   interface Props {
     bindingScope: ScopeId;
-    currentActionId: ValidActionId;
+    currentActionId: ValidActionId | null;
     onClose: () => void;
     onPick: (id: ValidActionId, action: Action) => void;
   }
@@ -20,9 +21,10 @@
 
   let query = $state("");
   let focusIdx = $state(0);
+  let dialog: HTMLDialogElement | undefined = $state();
   let inputEl: HTMLInputElement | undefined = $state();
 
-  // A global action works under any scope; a site action only under its own —
+  // Global actions work under any scope; site actions only under their own —
   // the picker must never offer an action the runtime would refuse.
   const compatibleIds = $derived(
     ACTION_IDS.filter((id) => {
@@ -31,7 +33,6 @@
     }),
   );
 
-  // Substring match across id and description.
   const filteredIds = $derived.by(() => {
     const q = query.trim().toLowerCase();
     if (!q) return compatibleIds;
@@ -44,9 +45,6 @@
     });
   });
 
-  // Single flat list. Site-specific actions float above global ones because
-  // that's why the user opened the picker on a site scope. Per-iteration
-  // values are pre-derived (Biome flags {@const} in templates).
   type Item = {
     id: ValidActionId;
     action: Action;
@@ -55,6 +53,8 @@
     badgeLabel: string | null;
   };
   const items = $derived.by<Item[]>(() => {
+    // Site-specific actions float above globals because that's why the user
+    // opened the picker on a site scope.
     const globalLast = (id: ValidActionId) =>
       ACTIONS[id].scope === "global" ? 1 : 0;
     const ordered = filteredIds
@@ -89,16 +89,15 @@
       : [],
   );
 
-  // Reset focus when the filter changes so the cursor doesn't strand off-list.
   $effect(() => {
     const len = items.length;
     if (focusIdx >= len) focusIdx = Math.max(0, len - 1);
   });
 
-  // Initial focus: search input, with cursor on the current action so ↵
-  // without typing keeps the existing choice.
   $effect(() => {
+    dialog?.showModal();
     tick().then(() => inputEl?.focus());
+    if (currentActionId === null) return;
     const cur = items.findIndex((i) => i.id === currentActionId);
     if (cur >= 0) focusIdx = cur;
   });
@@ -108,12 +107,9 @@
     onPick(item.id, item.action);
   }
 
+  // ArrowUp/Down/Enter for keyboard list navigation. Escape is handled
+  // natively by <dialog> via its cancel event.
   function onKeydown(e: KeyboardEvent) {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      onClose();
-      return;
-    }
     if (e.key === "ArrowDown") {
       e.preventDefault();
       focusIdx = Math.min(items.length - 1, focusIdx + 1);
@@ -127,130 +123,137 @@
     if (e.key === "Enter") {
       e.preventDefault();
       pick(focused);
-      return;
     }
-  }
-
-  function onScrimClick(e: MouseEvent) {
-    if (e.target === e.currentTarget) onClose();
   }
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="scrim" onclick={onScrimClick} onkeydown={onKeydown}>
-  <div
-    class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Pick an action"
-  >
-    <header class="head">
-      <div class="titles">
-        <h1>Pick an action</h1>
-        <p class="sub">
-          {#if bindingScope === "global"}
-            Global actions only
-          {:else}
-            Global + {SCOPES[bindingScope].label} actions
-          {/if}
-        </p>
-      </div>
-      <button type="button" class="close" title="Close" onclick={onClose}>
-        ×
-      </button>
-    </header>
-
-    <div class="body">
-      <section class="left">
-        <div class="search">
-          <input
-            bind:this={inputEl}
-            type="text"
-            value={query}
-            oninput={(e) => {
-              query = (e.currentTarget as HTMLInputElement).value;
-            }}
-            placeholder="Search actions…"
-            aria-label="Search actions"
-          >
-          <kbd>esc</kbd>
-        </div>
-
-        <ol class="list" role="listbox">
-          {#each items as item (item.id)}
-            <li>
-              <button
-                type="button"
-                class="item"
-                class:focused={item.idx === focusIdx}
-                onmousemove={() => {
-                  focusIdx = item.idx;
-                }}
-                onclick={() => pick(item)}
-              >
-                <span class="name">{item.name}</span>
-                {#if item.badgeLabel}
-                  <span class="badge site">{item.badgeLabel}</span>
-                {/if}
-              </button>
-            </li>
-          {:else}
-            <li class="empty">No matches.</li>
-          {/each}
-        </ol>
-      </section>
-
-      <aside class="right">
-        {#if focused}
-          <div class="detail-head">
-            <h2 class="detail-name">{focused.name}</h2>
-            {#if focused.badgeLabel}
-              <span class="badge site">Only on {focused.badgeLabel}</span>
-            {/if}
-          </div>
-          <p class="desc">{focused.action.description}</p>
-
-          <h3 class="opts-label">Options</h3>
-          {#if focusedSchema.length === 0}
-            <p class="opts-none">(no options)</p>
-          {:else}
-            <ul class="opts">
-              {#each focusedSchema as f (f.key)}
-                <li>
-                  <span class="opt-key">{f.key}</span>
-                  <span class="opt-kind">: {f.kind}</span>
-                  <span class="opt-default"
-                    >= {JSON.stringify(f.defaultValue)}</span
-                  >
-                </li>
-              {/each}
-            </ul>
-          {/if}
+<dialog
+  class="modal"
+  bind:this={dialog}
+  aria-label="Pick an action"
+  onclose={onClose}
+  onkeydown={onKeydown}
+  onclick={(e) => {
+    if (e.target === dialog) dialog.close();
+  }}
+>
+  <header class="head">
+    <div class="titles">
+      <h1>Pick an action</h1>
+      <p class="sub">
+        {#if bindingScope === "global"}
+          Global actions only
         {:else}
-          <p class="muted">No matches.</p>
+          Global + {SCOPES[bindingScope].label} actions
         {/if}
-      </aside>
+      </p>
     </div>
+    <button
+      type="button"
+      class="close"
+      title="Close"
+      onclick={() => dialog?.close()}
+    >
+      ×
+    </button>
+  </header>
 
-    <footer class="foot">
-      <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-      <span><kbd>↵</kbd> select</span>
-      <span><kbd>esc</kbd> close</span>
-    </footer>
+  <div class="body">
+    <section class="left">
+      <div class="search">
+        <Icon name="search" size={14} />
+        <input
+          bind:this={inputEl}
+          type="text"
+          value={query}
+          placeholder="Search actions by name or description…"
+          aria-label="Search actions"
+          oninput={(e) => {
+            query = (e.currentTarget as HTMLInputElement).value;
+          }}
+        >
+        <kbd>esc</kbd>
+      </div>
+      <ol class="list" role="listbox">
+        {#each items as item (item.id)}
+          <li>
+            <button
+              type="button"
+              class="item"
+              class:focused={item.idx === focusIdx}
+              onmousemove={() => {
+                focusIdx = item.idx;
+              }}
+              onclick={() => pick(item)}
+            >
+              <span class="name">{item.name}</span>
+              {#if item.badgeLabel}
+                <span class="badge site">{item.badgeLabel}</span>
+              {/if}
+            </button>
+          </li>
+        {:else}
+          <li class="empty">No matches.</li>
+        {/each}
+      </ol>
+    </section>
+
+    <aside class="right">
+      {#if focused}
+        <div class="detail-head">
+          <h2 class="detail-name">{focused.name}</h2>
+          {#if focused.badgeLabel}
+            <span class="badge site">Only on {focused.badgeLabel}</span>
+          {/if}
+        </div>
+        <p class="desc">{focused.action.description}</p>
+        <h3 class="opts-label">Options</h3>
+        {#if focusedSchema.length === 0}
+          <p class="opts-none">(no options)</p>
+        {:else}
+          <ul class="opts">
+            {#each focusedSchema as f (f.key)}
+              <li>
+                <span class="opt-key">{f.key}</span>
+                <span class="opt-kind">: {f.kind}</span>
+                <span class="opt-default">
+                  = {JSON.stringify(f.defaultValue)}
+                </span>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      {:else}
+        <p class="muted">No matches.</p>
+      {/if}
+    </aside>
   </div>
-</div>
+
+  <footer class="foot">
+    <span class="hint"><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+    <span class="hint"><kbd>↵</kbd> select</span>
+    <span class="hint"><kbd>esc</kbd> close</span>
+  </footer>
+</dialog>
 
 <style>
-  .scrim {
-    position: fixed;
-    inset: 0;
+  .modal {
+    margin: 12vh auto auto;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    box-shadow: var(--shadow-modal);
+    width: min(720px, calc(100vw - 32px));
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadein 0.15s ease-out;
+  }
+  .modal::backdrop {
     background: rgba(20, 18, 15, 0.32);
     backdrop-filter: blur(2px);
-    z-index: 100;
-    display: grid;
-    place-items: start center;
-    padding-top: 12vh;
-    animation: fadein 0.15s ease-out;
   }
   @keyframes fadein {
     from {
@@ -261,26 +264,12 @@
     }
   }
 
-  .modal {
-    background: #ffffff;
-    border: 1px solid #e6e3dc;
-    border-radius: 12px;
-    box-shadow:
-      0 1px 0 rgba(0, 0, 0, 0.04),
-      0 24px 60px rgba(20, 18, 15, 0.18);
-    width: min(720px, calc(100vw - 32px));
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
   .head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     padding: 16px 18px;
-    border-bottom: 1px solid #e6e3dc;
+    border-bottom: 1px solid var(--border);
   }
   .titles h1 {
     font-size: 14px;
@@ -289,22 +278,22 @@
   }
   .titles .sub {
     font-size: 12px;
-    color: #5a564e;
+    color: var(--text-2);
     margin: 0;
   }
-  button.close {
+  .close {
     border: 0;
     background: transparent;
-    cursor: pointer;
+    cursor: default;
     font-size: 18px;
-    color: #918b80;
+    color: var(--text-3);
     line-height: 1;
     padding: 2px 6px;
     border-radius: 5px;
   }
-  button.close:hover {
-    background: #efeeea;
-    color: #1a1815;
+  .close:hover {
+    background: var(--hover);
+    color: var(--text-1);
   }
 
   .body {
@@ -313,19 +302,19 @@
     min-height: 0;
     flex: 1;
   }
-
   .left {
     display: flex;
     flex-direction: column;
     min-height: 0;
-    border-right: 1px solid #e6e3dc;
+    border-right: 1px solid var(--border);
   }
   .search {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 10px 12px;
-    border-bottom: 1px solid #e6e3dc;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-2);
   }
   .search input {
     flex: 1;
@@ -334,14 +323,14 @@
     font: inherit;
     font-size: 13px;
     outline: 0;
-    color: #1a1815;
+    color: var(--text-1);
   }
   kbd {
-    font-family: ui-monospace, Consolas, "Liberation Mono", monospace;
+    font-family: var(--font-mono);
     font-size: 10px;
-    color: #5a564e;
-    background: #ffffff;
-    border: 1px solid #e6e3dc;
+    color: var(--text-2);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-bottom-width: 1.5px;
     border-radius: 4px;
     padding: 1px 5px;
@@ -358,25 +347,26 @@
   .list li {
     list-style: none;
   }
-  button.item {
+  .item {
     width: 100%;
     text-align: left;
     background: transparent;
     border: 0;
-    cursor: pointer;
+    cursor: default;
     padding: 7px 10px;
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #1a1815;
+    color: var(--text-1);
     border-radius: 5px;
+    font: inherit;
   }
-  button.item.focused,
-  button.item:hover {
-    background: #f4f3f0;
+  .item.focused,
+  .item:hover {
+    background: var(--subtle);
   }
   .name {
-    font-family: ui-monospace, Consolas, "Liberation Mono", monospace;
+    font-family: var(--font-mono);
     font-size: 12.5px;
     font-weight: 500;
     flex: 1;
@@ -389,17 +379,16 @@
     display: inline-flex;
     align-items: center;
     font-size: 10px;
-    color: #6b21a8;
-    background: #f3ebfb;
-    border: 1px solid #e1d0f3;
+    color: var(--site-tag);
+    background: var(--site-bg);
+    border: 1px solid var(--site-bd);
     padding: 1px 6px;
     border-radius: 999px;
-    letter-spacing: 0.02em;
     flex-shrink: 0;
   }
   .empty {
     padding: 16px;
-    color: #918b80;
+    color: var(--text-3);
     font-size: 12px;
     text-align: center;
   }
@@ -407,9 +396,9 @@
   .right {
     padding: 14px 14px 16px;
     overflow-y: auto;
-    background: #fbfaf8;
+    background: var(--canvas);
     font-size: 12px;
-    color: #3a3530;
+    color: var(--text-2);
     min-width: 0;
   }
   .detail-head {
@@ -420,23 +409,22 @@
     flex-wrap: wrap;
   }
   .detail-name {
-    font-family: ui-monospace, Consolas, "Liberation Mono", monospace;
+    font-family: var(--font-mono);
     font-size: 14px;
     font-weight: 600;
     margin: 0;
-    color: #1a1815;
+    color: var(--text-1);
   }
   .desc {
     margin: 0 0 12px;
     line-height: 1.5;
-    color: #5a564e;
   }
   .opts-label {
     font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: #918b80;
+    color: var(--text-3);
     margin: 12px 0 6px;
   }
   .opts {
@@ -445,27 +433,27 @@
     padding: 0;
   }
   .opts li {
-    font-family: ui-monospace, Consolas, "Liberation Mono", monospace;
+    font-family: var(--font-mono);
     font-size: 11px;
     padding: 2px 0;
   }
   .opt-key {
-    color: #1a1815;
+    color: var(--text-1);
   }
   .opt-kind {
-    color: #918b80;
+    color: var(--text-3);
   }
   .opt-default {
-    color: #918b80;
+    color: var(--text-3);
     margin-left: 4px;
   }
   .opts-none {
     font-size: 11px;
-    color: #918b80;
+    color: var(--text-3);
     margin: 0;
   }
   .muted {
-    color: #918b80;
+    color: var(--text-3);
     font-size: 12px;
   }
 
@@ -473,12 +461,12 @@
     display: flex;
     gap: 14px;
     padding: 8px 14px;
-    border-top: 1px solid #e6e3dc;
-    color: #918b80;
+    border-top: 1px solid var(--border);
+    color: var(--text-3);
     font-size: 11px;
-    background: #fbfaf8;
+    background: var(--canvas);
   }
-  .foot span {
+  .hint {
     display: inline-flex;
     align-items: center;
     gap: 4px;
