@@ -42,6 +42,9 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
+      typescript-svelte-plugin:
+        specifier: 0.3.52
+        version: 0.3.52(svelte@5.55.5)(typescript@6.0.3)
       vitest:
         specifier: ^4.1.5
         version: 4.1.5(@types/node@25.6.2)(happy-dom@20.9.0)(vite@8.0.11(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0))
@@ -803,6 +806,9 @@ packages:
     peerDependenciesMeta:
       supports-color:
         optional: true
+
+  dedent-js@1.0.1:
+    resolution: {integrity: sha512-OUepMozQULMLUmhxS95Vudo0jb0UchLimi3+pQ2plj61Fcy8axbP9hbiD4Sz6DPqn6XG3kfmziVfQ1rSys5AJQ==}
 
   deep-extend@0.6.0:
     resolution: {integrity: sha512-LOHxIOaPYdHlJRtCQfDIVZtfw/ufM8+rVj649RIHzcm/vGwQRXFt6OPqIFWsm2XEMrNIEtWR64sY1LEKD2vAOA==}
@@ -1711,6 +1717,12 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       typescript: '>=5.0.0'
 
+  svelte2tsx@0.7.55:
+    resolution: {integrity: sha512-JWzgeM3lqySRNfqcsesvVEh8LhTWBxQJ9RMjzJ+VepdmXtVnNd0SbtGctG6+/fbHq0N6mhwSd823gszw9JHeGQ==}
+    peerDependencies:
+      svelte: ^3.55 || ^4.0.0-next.0 || ^4.0 || ^5.0.0-next.0
+      typescript: ^4.9.4 || ^5.0.0 || ^6.0.0
+
   svelte@5.55.5:
     resolution: {integrity: sha512-2uCs/LZ9us+AktdzYJM8OcxQ8qnPS1kpaO7syGT/MgO+6Qr1Ybl+TqPq+97u7PHqmmMlye5ZkoyXONy5mjjAbw==}
     engines: {node: '>=18'}
@@ -1753,6 +1765,9 @@ packages:
 
   typedarray@0.0.6:
     resolution: {integrity: sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==}
+
+  typescript-svelte-plugin@0.3.52:
+    resolution: {integrity: sha512-Pfh6MLk91IO+HqYgcx75TvG2iRM1tJ0vYiCya9TsXbBYZVjh3iayKyRjXGNNkG30NqSVPddRDy+vTuCMs16FZQ==}
 
   typescript@6.0.3:
     resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
@@ -2615,6 +2630,8 @@ snapshots:
   debug@4.4.3:
     dependencies:
       ms: 2.1.3
+
+  dedent-js@1.0.1: {}
 
   deep-extend@0.6.0: {}
 
@@ -3479,6 +3496,13 @@ snapshots:
     transitivePeerDependencies:
       - picomatch
 
+  svelte2tsx@0.7.55(svelte@5.55.5)(typescript@6.0.3):
+    dependencies:
+      dedent-js: 1.0.1
+      scule: 1.3.0
+      svelte: 5.55.5
+      typescript: 6.0.3
+
   svelte@5.55.5:
     dependencies:
       '@jridgewell/remapping': 2.3.5
@@ -3526,6 +3550,14 @@ snapshots:
   type-fest@4.41.0: {}
 
   typedarray@0.0.6: {}
+
+  typescript-svelte-plugin@0.3.52(svelte@5.55.5)(typescript@6.0.3):
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.5.5
+      svelte2tsx: 0.7.55(svelte@5.55.5)(typescript@6.0.3)
+    transitivePeerDependencies:
+      - svelte
+      - typescript
 
   typescript@6.0.3: {}
 
