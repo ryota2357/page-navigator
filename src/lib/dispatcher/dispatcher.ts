@@ -1,8 +1,14 @@
+import type { InvokeResult } from "../action";
 import type { KeyToken } from "../keys";
 import { log } from "../log";
 import { ACTIONS } from "../scopes/actions";
 import type { Binding } from "../storage/bindings";
-import { compileTrie, type Leaf, type TrieNode } from "./trie";
+import {
+  type ConcreteLeaf,
+  compileTrie,
+  type Leaf,
+  type TrieNode,
+} from "./trie";
 
 // "passed" is the only outcome where the content script lets the keystroke
 // reach the page; "fired" and "consumed" both swallow it. "consumed" keeps
@@ -92,20 +98,33 @@ export class Dispatcher {
     try {
       const ret = ACTIONS[leaf.actionId].invoke(leaf.options);
       if (ret instanceof Promise) {
-        ret.catch((e) => {
-          log.error("action threw", {
-            bindingId: leaf.bindingId,
-            actionId: leaf.actionId,
-            error: String(e),
-          });
-        });
+        ret.then(
+          (result) => this.reportResult(leaf, result),
+          (e) => this.reportThrow(leaf, e),
+        );
+      } else {
+        this.reportResult(leaf, ret);
       }
     } catch (e) {
-      log.error("action threw", {
-        bindingId: leaf.bindingId,
-        actionId: leaf.actionId,
-        error: String(e),
-      });
+      this.reportThrow(leaf, e);
     }
+  }
+
+  private reportResult(leaf: ConcreteLeaf, result: InvokeResult): void {
+    if (result.ok) return;
+    log.warn("action did not run", {
+      bindingId: leaf.bindingId,
+      actionId: leaf.actionId,
+      reason: result.reason,
+      options: leaf.options,
+    });
+  }
+
+  private reportThrow(leaf: ConcreteLeaf, error: unknown): void {
+    log.error("action threw", {
+      bindingId: leaf.bindingId,
+      actionId: leaf.actionId,
+      error: String(error),
+    });
   }
 }

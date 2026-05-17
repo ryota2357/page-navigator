@@ -4,7 +4,7 @@ import type { ScopeId } from "../scopes";
 import type { ValidActionId } from "../scopes/actions";
 import type { Binding } from "../storage/bindings";
 
-type ConcreteLeaf = {
+export type ConcreteLeaf = {
   conflicted?: false;
   bindingId: string;
   scope: ScopeId;

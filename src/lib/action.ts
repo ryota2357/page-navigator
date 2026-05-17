@@ -9,8 +9,12 @@ export type Action<
   description: string;
   optionSchema: S;
   defaults: OptionValue<S>;
-  invoke: (option: Record<PropertyKey, unknown>) => void | Promise<void>;
+  invoke: (
+    option: Record<PropertyKey, unknown>,
+  ) => InvokeResult | Promise<InvokeResult>;
 };
+
+export type InvokeResult = { ok: true } | { ok: false; reason: string };
 
 export type OptionSchema = {
   label: string;
@@ -94,8 +98,12 @@ export function defineAction<
       for (const key of Object.keys(spec.optionSchema)) {
         optv[key] = key in option ? option[key] : spec.defaults[key];
       }
-      if (!isOptionValue(optv, spec.optionSchema)) return;
-      return spec.run(optv);
+      if (!isOptionValue(optv, spec.optionSchema)) {
+        return { ok: false, reason: "invalid options" };
+      }
+      const ret = spec.run(optv);
+      if (ret instanceof Promise) return ret.then(() => ({ ok: true }));
+      return { ok: true };
     },
   };
 }
