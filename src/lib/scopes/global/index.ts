@@ -9,10 +9,14 @@ export const globalScope = {
 export const globalActions = [
   scroll.scrollDownAction,
   scroll.scrollUpAction,
+  scroll.scrollLeftAction,
+  scroll.scrollRightAction,
   scroll.scrollPageDownAction,
   scroll.scrollPageUpAction,
   scroll.scrollToTopAction,
   scroll.scrollToBottomAction,
+  scroll.scrollToLeftAction,
+  scroll.scrollToRightAction,
   history.goHistoryBackAction,
   history.goHistoryForwardAction,
 ] as const;

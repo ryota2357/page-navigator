@@ -36,6 +36,32 @@ export const scrollUpAction = defineAction("scrollUp", {
   },
 });
 
+export const scrollLeftAction = defineAction("scrollLeft", {
+  scope: "global",
+  description: "Scroll left by a fixed amount.",
+  optionSchema: byPixelOptionSchema,
+  defaults: { amount: 100, smooth: false },
+  run: (options) => {
+    window.scrollBy({
+      left: -options.amount,
+      behavior: options.smooth ? "smooth" : "instant",
+    });
+  },
+});
+
+export const scrollRightAction = defineAction("scrollRight", {
+  scope: "global",
+  description: "Scroll right by a fixed amount.",
+  optionSchema: byPixelOptionSchema,
+  defaults: { amount: 100, smooth: false },
+  run: (options) => {
+    window.scrollBy({
+      left: options.amount,
+      behavior: options.smooth ? "smooth" : "instant",
+    });
+  },
+});
+
 const byPageOptionSchema = {
   fraction: {
     kind: "number",
@@ -98,6 +124,32 @@ export const scrollToBottomAction = defineAction("scrollToBottom", {
   run: (options) => {
     window.scrollTo({
       top: document.documentElement.scrollHeight,
+      behavior: options.smooth ? "smooth" : "instant",
+    });
+  },
+});
+
+export const scrollToLeftAction = defineAction("scrollToLeft", {
+  scope: "global",
+  description: "Jump to the leftmost edge of the page.",
+  optionSchema: toEdgeOptionSchema,
+  defaults: { smooth: false },
+  run: (options) => {
+    window.scrollTo({
+      left: 0,
+      behavior: options.smooth ? "smooth" : "instant",
+    });
+  },
+});
+
+export const scrollToRightAction = defineAction("scrollToRight", {
+  scope: "global",
+  description: "Jump to the rightmost edge of the page.",
+  optionSchema: toEdgeOptionSchema,
+  defaults: { smooth: false },
+  run: (options) => {
+    window.scrollTo({
+      left: document.documentElement.scrollWidth,
       behavior: options.smooth ? "smooth" : "instant",
     });
   },
