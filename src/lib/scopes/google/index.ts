@@ -3,8 +3,7 @@ import * as tabs from "./tabs";
 
 export const googleScope = {
   label: "Google",
-  // Accepts any TLD (.com / .co.jp / .de / …) so users on a local Google domain are covered.
-  urlPattern: /^https:\/\/www\.google\..+\/search/,
+  urlPattern: /^https:\/\/www\.google\.com\/search/,
 } as const;
 
 export const googleActions = [
