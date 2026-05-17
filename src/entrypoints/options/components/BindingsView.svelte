@@ -1,7 +1,7 @@
 <script lang="ts">
   import { SCOPES, type ScopeId } from "@/lib/scopes";
   import { ACTIONS } from "@/lib/scopes/actions";
-  import type { Binding } from "@/lib/storage/bindings";
+  import type { Binding } from "@/lib/storage";
   import { findConflicts, serializeTrigger } from "../conflicts";
   import { siteDisplay } from "../siteDisplay";
   import BindingsList from "./BindingsList.svelte";

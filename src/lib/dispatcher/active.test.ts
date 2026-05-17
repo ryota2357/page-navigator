@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { parseTrigger } from "../keys";
-import type { ScopeId } from "../scopes";
-import type { Binding } from "../storage/bindings";
+import { parseTrigger } from "@/lib/keys";
+import type { ScopeId } from "@/lib/scopes";
+import type { Binding } from "@/lib/storage";
 import { activeBindings } from "./active";
 
 // `triggers` arrive as plain strings; `parseTrigger` mints the branded

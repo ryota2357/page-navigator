@@ -1,5 +1,5 @@
 import type { Trigger } from "@/lib/keys";
-import type { Binding } from "@/lib/storage/bindings";
+import type { Binding } from "@/lib/storage";
 
 // Serialise a Trigger to a string key so identical triggers (same sequence
 // of canonical KeyTokens) collapse to one map entry. Stable across sessions

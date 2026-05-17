@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ScopeId } from "@/lib/scopes";
-  import type { Binding } from "@/lib/storage/bindings";
+  import type { Binding } from "@/lib/storage";
   import { bindingHasConflict } from "../conflicts";
   import { sortable } from "../sortable.svelte";
   import BindingRow from "./BindingRow.svelte";

@@ -1,8 +1,8 @@
-import type { KeyToken } from "../keys";
-import { log } from "../log";
-import type { ScopeId } from "../scopes";
-import type { ValidActionId } from "../scopes/actions";
-import type { Binding } from "../storage/bindings";
+import type { KeyToken } from "@/lib/keys";
+import { log } from "@/lib/log";
+import type { ScopeId } from "@/lib/scopes";
+import type { ValidActionId } from "@/lib/scopes/actions";
+import type { Binding } from "@/lib/storage";
 
 export type Leaf =
   | {

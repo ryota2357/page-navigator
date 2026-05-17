@@ -3,7 +3,7 @@
   import type { Trigger } from "@/lib/keys";
   import type { ScopeId } from "@/lib/scopes";
   import { ACTIONS, type ValidActionId } from "@/lib/scopes/actions";
-  import type { Binding } from "@/lib/storage/bindings";
+  import type { Binding } from "@/lib/storage";
   import { actionDisplay } from "../actionDisplay";
   import ActionPickerModal from "./ActionPickerModal.svelte";
   import Icon from "./Icon.svelte";

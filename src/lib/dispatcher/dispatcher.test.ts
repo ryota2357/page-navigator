@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { parse, parseTrigger } from "../keys";
-import type { Binding } from "../storage/bindings";
+import { parse, parseTrigger } from "@/lib/keys";
+import type { Binding } from "@/lib/storage";
 import { Dispatcher } from "./dispatcher";
 import { compileTrie } from "./trie";
 

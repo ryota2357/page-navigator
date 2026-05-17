@@ -2,8 +2,7 @@ import { activeBindings, Dispatcher } from "@/lib/dispatcher";
 import { encodeKeyToken, isImeComposing, isModifierKey } from "@/lib/keys";
 import { log } from "@/lib/log";
 import { resolveActiveScopes } from "@/lib/scopes";
-import { bindingsItem, loadBindings } from "@/lib/storage/bindings";
-import { loadSettings, settingsItem } from "@/lib/storage/settings";
+import { bindingsItem, settingsItem } from "@/lib/storage";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
@@ -15,8 +14,8 @@ export default defineContentScript({
     // Google's SERP is a full nav per query so this holds in practice.
     const activeScopes = resolveActiveScopes(location.href);
 
-    const settings = await loadSettings();
-    const allBindings = await loadBindings();
+    const settings = await settingsItem.getValue();
+    const allBindings = await bindingsItem.getValue();
     const dispatcher = new Dispatcher(settings.sequenceTimeoutMs);
     dispatcher.rebuild(activeBindings(allBindings, activeScopes));
 

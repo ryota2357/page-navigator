@@ -1,38 +1,60 @@
-import { storage } from "wxt/utils/storage";
+import { is } from "@core/unknownutil";
+import { defineStorageItem } from "./storage";
 
 export type Settings = {
-  sequenceTimeoutMs: number;
+  [K in keyof typeof settingsSchema]: (typeof settingsSchema)[K] extends {
+    type: "number";
+  }
+    ? number
+    : never;
 };
 
-// `0` or negative would mean "drop prefix immediately" → unusable; absurdly
-// large values mean "trie state never resets" → mild DoS. Out-of-range values
-// from poisoned storage clamp to the nearest valid value on load.
-export const SEQUENCE_TIMEOUT_MIN_MS = 100;
-export const SEQUENCE_TIMEOUT_MAX_MS = 60_000;
-const SEQUENCE_TIMEOUT_FALLBACK_MS = 1000;
+export const settingsSchema = {
+  sequenceTimeoutMs: {
+    type: "number",
+    min: 20,
+    max: 60_000,
+    default: 1000,
+  },
+} as const;
 
-export const settingsItem = storage.defineItem<Settings>("local:settings", {
-  fallback: { sequenceTimeoutMs: SEQUENCE_TIMEOUT_FALLBACK_MS },
+const defalutSettings = Object.fromEntries(
+  Object.entries(settingsSchema).map(([key, { default: value }]) => [
+    key,
+    value,
+  ]),
+) as Settings;
+
+export const settingsItem = defineStorageItem<Settings>("local:settings", {
+  fallback: defalutSettings,
   version: 1,
   migrations: {},
+  validate: (raw) => {
+    if (!is.RecordObject(raw)) {
+      return {
+        ok: false,
+        fallback: defalutSettings,
+      };
+    }
+    const valid: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(raw)) {
+      if (!(key in settingsSchema)) continue;
+      const schema = settingsSchema[key as keyof typeof settingsSchema];
+      if (typeof value !== schema.type) continue;
+      switch (schema.type) {
+        case "number":
+          if (is.Number(value) && Number.isFinite(value)) {
+            if (schema.min <= value && value <= schema.max) {
+              valid[key] = value;
+            }
+            continue;
+          }
+          valid[key] = schema.default;
+          break;
+        default:
+          schema.type satisfies never;
+      }
+    }
+    return { ok: true };
+  },
 });
-
-export async function loadSettings(): Promise<Settings> {
-  const stored = await settingsItem.getValue();
-  let timeout = stored.sequenceTimeoutMs;
-  let changed = false;
-  if (typeof timeout !== "number" || Number.isNaN(timeout)) {
-    timeout = SEQUENCE_TIMEOUT_FALLBACK_MS;
-    changed = true;
-  } else if (timeout < SEQUENCE_TIMEOUT_MIN_MS) {
-    timeout = SEQUENCE_TIMEOUT_MIN_MS;
-    changed = true;
-  } else if (timeout > SEQUENCE_TIMEOUT_MAX_MS) {
-    timeout = SEQUENCE_TIMEOUT_MAX_MS;
-    changed = true;
-  }
-
-  const repaired: Settings = { sequenceTimeoutMs: timeout };
-  if (changed) await settingsItem.setValue(repaired);
-  return repaired;
-}

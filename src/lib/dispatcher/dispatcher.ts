@@ -1,8 +1,8 @@
-import type { InvokeResult } from "../action";
-import type { KeyToken } from "../keys";
-import { log } from "../log";
-import { ACTIONS } from "../scopes/actions";
-import type { Binding } from "../storage/bindings";
+import type { InvokeResult } from "@/lib/action";
+import type { KeyToken } from "@/lib/keys";
+import { log } from "@/lib/log";
+import { ACTIONS } from "@/lib/scopes/actions";
+import type { Binding } from "@/lib/storage";
 import { compileTrie, type Leaf, type TrieNode } from "./trie";
 
 // "passed" is the only outcome where the content script lets the keystroke

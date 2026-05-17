@@ -10,7 +10,7 @@ function noMods() {
 }
 
 // Lenient: case-insensitive modifiers/letters, any modifier order.
-// Throws on malformed input — `loadBindings` catches and drops the row.
+// Throws on malformed input.
 export function parse(input: string): KeyToken {
   if (input.length === 0) throw new Error("empty key token");
 

@@ -1,9 +1,5 @@
 import { defineAction } from "@/lib/action";
 
-function behavior(smooth: boolean): ScrollBehavior {
-  return smooth ? "smooth" : "auto";
-}
-
 const byPixelOptionSchema = {
   amount: {
     kind: "number",
@@ -22,7 +18,7 @@ export const scrollDownAction = defineAction("scrollDown", {
   run: (options) => {
     window.scrollBy({
       top: options.amount,
-      behavior: behavior(options.smooth),
+      behavior: options.smooth ? "smooth" : "instant",
     });
   },
 });
@@ -35,7 +31,7 @@ export const scrollUpAction = defineAction("scrollUp", {
   run: (options) => {
     window.scrollBy({
       top: -options.amount,
-      behavior: behavior(options.smooth),
+      behavior: options.smooth ? "smooth" : "instant",
     });
   },
 });
@@ -59,7 +55,7 @@ export const scrollPageDownAction = defineAction("scrollPageDown", {
   run: (options) => {
     window.scrollBy({
       top: window.innerHeight * options.fraction,
-      behavior: behavior(options.smooth),
+      behavior: options.smooth ? "smooth" : "instant",
     });
   },
 });
@@ -72,7 +68,7 @@ export const scrollPageUpAction = defineAction("scrollPageUp", {
   run: (options) => {
     window.scrollBy({
       top: -window.innerHeight * options.fraction,
-      behavior: behavior(options.smooth),
+      behavior: options.smooth ? "smooth" : "instant",
     });
   },
 });
@@ -87,7 +83,10 @@ export const scrollToTopAction = defineAction("scrollToTop", {
   optionSchema: toEdgeOptionSchema,
   defaults: { smooth: false },
   run: (options) => {
-    window.scrollTo({ top: 0, behavior: behavior(options.smooth) });
+    window.scrollTo({
+      top: 0,
+      behavior: options.smooth ? "smooth" : "instant",
+    });
   },
 });
 
@@ -99,7 +98,7 @@ export const scrollToBottomAction = defineAction("scrollToBottom", {
   run: (options) => {
     window.scrollTo({
       top: document.documentElement.scrollHeight,
-      behavior: behavior(options.smooth),
+      behavior: options.smooth ? "smooth" : "instant",
     });
   },
 });

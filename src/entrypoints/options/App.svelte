@@ -4,13 +4,9 @@
   import {
     type Binding,
     bindingsItem,
-    loadBindings,
-  } from "@/lib/storage/bindings";
-  import {
-    loadSettings,
     type Settings,
     settingsItem,
-  } from "@/lib/storage/settings";
+  } from "@/lib/storage";
   import AddSiteModal from "./components/AddSiteModal.svelte";
   import BindingsView from "./components/BindingsView.svelte";
   import ExportDialog from "./components/ExportDialog.svelte";
@@ -58,8 +54,8 @@
   });
 
   onMount(async () => {
-    bindings = await loadBindings();
-    settings = await loadSettings();
+    bindings = await bindingsItem.getValue();
+    settings = await settingsItem.getValue();
     const configured = new Set(bindings.map((b) => b.scope));
     siteOrder = SCOPE_IDS.filter((id) => id !== "global" && configured.has(id));
     loaded = true;

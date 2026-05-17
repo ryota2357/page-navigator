@@ -1,9 +1,5 @@
 <script lang="ts">
-  import {
-    SEQUENCE_TIMEOUT_MAX_MS,
-    SEQUENCE_TIMEOUT_MIN_MS,
-    type Settings,
-  } from "@/lib/storage/settings";
+  import { type Settings, settingsSchema } from "@/lib/storage";
   import Icon from "./Icon.svelte";
   import SequenceTimeoutPreview from "./SequenceTimeoutPreview.svelte";
 
@@ -52,15 +48,15 @@
           <div class="desc">
             How long to wait for the next key in a multi-key sequence (e.g.
             <code>g g</code>). Clamped to
-            {SEQUENCE_TIMEOUT_MIN_MS}–{SEQUENCE_TIMEOUT_MAX_MS}
+            {settingsSchema.sequenceTimeoutMs.min}–{settingsSchema.sequenceTimeoutMs.max}
             ms.
           </div>
         </div>
         <div class="num-wrap">
           <input
             type="number"
-            min={SEQUENCE_TIMEOUT_MIN_MS}
-            max={SEQUENCE_TIMEOUT_MAX_MS}
+            min={settingsSchema.sequenceTimeoutMs.min}
+            max={settingsSchema.sequenceTimeoutMs.max}
             step="50"
             value={settings.sequenceTimeoutMs}
             onchange={(e) =>
