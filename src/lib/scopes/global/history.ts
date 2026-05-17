@@ -5,7 +5,7 @@ export const goHistoryBackAction = defineAction("goHistoryBack", {
   description: "Go back one step in the browser history.",
   optionSchema: {},
   defaults: {},
-  bind: () => () => {
+  run: () => {
     window.history.back();
   },
 });
@@ -15,7 +15,7 @@ export const goHistoryForwardAction = defineAction("goHistoryForward", {
   description: "Go forward one step in the browser history.",
   optionSchema: {},
   defaults: {},
-  bind: () => () => {
+  run: () => {
     window.history.forward();
   },
 });

@@ -64,67 +64,6 @@ describe("loadBindings", () => {
     expect(stored[0].triggers).toEqual([["<c-j>"]]);
   });
 
-  it("fills missing option fields from defaults", async () => {
-    await seedRawBindings([
-      {
-        id: "b1",
-        scope: "global",
-        triggers: [["j"]],
-        actionId: "scrollDown",
-        options: { amount: 50 },
-        enabled: true,
-      },
-    ]);
-    const result = await loadBindings();
-    expect(result[0].options).toEqual({ amount: 50, smooth: false });
-  });
-
-  it("strips extra option fields not declared by the action", async () => {
-    await seedRawBindings([
-      {
-        id: "b1",
-        scope: "global",
-        triggers: [["j"]],
-        actionId: "scrollDown",
-        options: { amount: 100, smooth: false, mystery: 42 },
-        enabled: true,
-      },
-    ]);
-    const result = await loadBindings();
-    expect(result[0].options).toEqual({ amount: 100, smooth: false });
-  });
-
-  it("drops a binding with an out-of-range numeric option", async () => {
-    await seedRawBindings([
-      {
-        id: "b1",
-        scope: "global",
-        triggers: [["j"]],
-        actionId: "scrollDown",
-        // `amount` min is 1 — the action's schema rejects it outright.
-        options: { amount: -999, smooth: false },
-        enabled: true,
-      },
-    ]);
-    const result = await loadBindings();
-    expect(result).toEqual([]);
-  });
-
-  it("drops a binding whose options fail the meta schema", async () => {
-    await seedRawBindings([
-      {
-        id: "b1",
-        scope: "global",
-        triggers: [["j"]],
-        actionId: "scrollDown",
-        options: { amount: "not a number", smooth: false },
-        enabled: true,
-      },
-    ]);
-    const result = await loadBindings();
-    expect(result).toEqual([]);
-  });
-
   it("accepts known site scopes (google)", async () => {
     const seed: Binding = {
       id: "b1",

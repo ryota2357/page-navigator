@@ -1,5 +1,6 @@
 import type { KeyToken } from "../keys";
 import { log } from "../log";
+import { ACTIONS } from "../scopes/actions";
 import type { Binding } from "../storage/bindings";
 import { compileTrie, type Leaf, type TrieNode } from "./trie";
 
@@ -89,7 +90,7 @@ export class Dispatcher {
       return;
     }
     try {
-      const ret = leaf.instance.invoke();
+      const ret = ACTIONS[leaf.actionId].invoke(leaf.options);
       if (ret instanceof Promise) {
         ret.catch((e) => {
           log.error("action threw", {

@@ -19,7 +19,7 @@ export const scrollDownAction = defineAction("scrollDown", {
   description: "Scroll down by a fixed amount.",
   optionSchema: byPixelOptionSchema,
   defaults: { amount: 100, smooth: false },
-  bind: (options) => () => {
+  run: (options) => {
     window.scrollBy({
       top: options.amount,
       behavior: behavior(options.smooth),
@@ -32,7 +32,7 @@ export const scrollUpAction = defineAction("scrollUp", {
   description: "Scroll up by a fixed amount.",
   optionSchema: byPixelOptionSchema,
   defaults: { amount: 100, smooth: false },
-  bind: (options) => () => {
+  run: (options) => {
     window.scrollBy({
       top: -options.amount,
       behavior: behavior(options.smooth),
@@ -56,7 +56,7 @@ export const scrollPageDownAction = defineAction("scrollPageDown", {
   description: "Scroll down by a fraction of the viewport height.",
   optionSchema: byPageOptionSchema,
   defaults: { fraction: 0.85, smooth: false },
-  bind: (options) => () => {
+  run: (options) => {
     window.scrollBy({
       top: window.innerHeight * options.fraction,
       behavior: behavior(options.smooth),
@@ -69,7 +69,7 @@ export const scrollPageUpAction = defineAction("scrollPageUp", {
   description: "Scroll up by a fraction of the viewport height.",
   optionSchema: byPageOptionSchema,
   defaults: { fraction: 0.85, smooth: false },
-  bind: (options) => () => {
+  run: (options) => {
     window.scrollBy({
       top: -window.innerHeight * options.fraction,
       behavior: behavior(options.smooth),
@@ -86,7 +86,7 @@ export const scrollToTopAction = defineAction("scrollToTop", {
   description: "Jump to the very top of the page.",
   optionSchema: toEdgeOptionSchema,
   defaults: { smooth: false },
-  bind: (options) => () => {
+  run: (options) => {
     window.scrollTo({ top: 0, behavior: behavior(options.smooth) });
   },
 });
@@ -96,7 +96,7 @@ export const scrollToBottomAction = defineAction("scrollToBottom", {
   description: "Jump to the very bottom of the page.",
   optionSchema: toEdgeOptionSchema,
   defaults: { smooth: false },
-  bind: (options) => () => {
+  run: (options) => {
     window.scrollTo({
       top: document.documentElement.scrollHeight,
       behavior: behavior(options.smooth),

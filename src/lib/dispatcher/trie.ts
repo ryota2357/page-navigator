@@ -1,8 +1,7 @@
-import type { ActionInstance } from "../action";
 import type { KeyToken } from "../keys";
 import { log } from "../log";
 import type { ScopeId } from "../scopes";
-import { ACTIONS, type ValidActionId } from "../scopes/actions";
+import type { ValidActionId } from "../scopes/actions";
 import type { Binding } from "../storage/bindings";
 
 type ConcreteLeaf = {
@@ -10,7 +9,7 @@ type ConcreteLeaf = {
   bindingId: string;
   scope: ScopeId;
   actionId: ValidActionId;
-  instance: ActionInstance;
+  options: Record<string, unknown>;
 };
 
 type ConflictedLeaf = {
@@ -29,23 +28,15 @@ export type TrieNode = {
 // dispatcher refuses to fire. Cross-scope collisions never reach here —
 // `activeBindings` shadows global with site before this is called.
 //
-// `enabled` and `build` filters here are safety nets; the loader is
-// expected to have filtered upstream. `actionId` needs no check — `Binding`
-// types it as a registered `ValidActionId`.
+// The `enabled` filter here is a safety net; the loader is expected to
+// have filtered upstream. `actionId` needs no check — `Binding` types it
+// as a registered `ValidActionId`. Option validation is the action's job
+// at invoke time.
 export function compileTrie(bindings: ReadonlyArray<Binding>): TrieNode {
   const root: TrieNode = {};
 
   for (const b of bindings) {
     if (!b.enabled) continue;
-
-    const instance = ACTIONS[b.actionId].build(b.options);
-    if (!instance) {
-      log.warn("skipping binding: options failed validation", {
-        bindingId: b.id,
-        actionId: b.actionId,
-      });
-      continue;
-    }
 
     for (const trigger of b.triggers) {
       if (trigger.length === 0) {
@@ -69,7 +60,7 @@ export function compileTrie(bindings: ReadonlyArray<Binding>): TrieNode {
           bindingId: b.id,
           scope: b.scope,
           actionId: b.actionId,
-          instance,
+          options: b.options,
         };
       } else if (node.leaf.conflicted) {
         node.leaf.bindingIds.push(b.id);

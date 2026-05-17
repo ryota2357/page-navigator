@@ -44,7 +44,7 @@ export const focusNextResultAction = defineAction("google.focusNextResult", {
   description: "Move focus to the next search result.",
   optionSchema: focusOptionSchema,
   defaults: { wrap: false },
-  bind: (options) => () => moveCursor(+1, options.wrap),
+  run: (options) => moveCursor(+1, options.wrap),
 });
 
 export const focusPrevResultAction = defineAction("google.focusPrevResult", {
@@ -52,7 +52,7 @@ export const focusPrevResultAction = defineAction("google.focusPrevResult", {
   description: "Move focus to the previous search result.",
   optionSchema: focusOptionSchema,
   defaults: { wrap: false },
-  bind: (options) => () => moveCursor(-1, options.wrap),
+  run: (options) => moveCursor(-1, options.wrap),
 });
 
 export const openResultAction = defineAction("google.openResult", {
@@ -60,7 +60,7 @@ export const openResultAction = defineAction("google.openResult", {
   description: "Activate the currently focused search result.",
   optionSchema: { newTab: { kind: "boolean", label: "Open in new tab" } },
   defaults: { newTab: false },
-  bind: (options) => () => {
+  run: (options) => {
     const links = findResultLinks();
     if (links.length === 0) return;
     const idx = currentIndex(links);

@@ -1,13 +1,6 @@
 import { is } from "@core/unknownutil";
 import type { ScopeId } from "./scopes";
 
-export type ActionInstance = {
-  id: string;
-  scope: ScopeId;
-  option: Record<string, number | boolean | string>;
-  invoke: () => void | Promise<void>;
-};
-
 export type Action<
   S extends Record<string, OptionSchema> = Record<string, OptionSchema>,
 > = {
@@ -16,7 +9,7 @@ export type Action<
   description: string;
   optionSchema: S;
   defaults: OptionValue<S>;
-  build: (option: Record<PropertyKey, unknown>) => ActionInstance | null;
+  invoke: (option: Record<PropertyKey, unknown>) => void | Promise<void>;
 };
 
 export type OptionSchema = {
@@ -87,7 +80,7 @@ export function defineAction<
     description: string;
     optionSchema: S;
     defaults: OptionValue<S>;
-    bind: (options: OptionValue<S>) => () => void | Promise<void>;
+    run: (options: OptionValue<S>) => void | Promise<void>;
   },
 ): Action<S> & { id: Id } {
   return {
@@ -96,18 +89,13 @@ export function defineAction<
     description: spec.description,
     optionSchema: spec.optionSchema,
     defaults: spec.defaults,
-    build: (option: Record<string, unknown> = {}): ActionInstance | null => {
+    invoke: (option: Record<string, unknown>) => {
       const optv: Record<string, unknown> = {};
       for (const key of Object.keys(spec.optionSchema)) {
         optv[key] = key in option ? option[key] : spec.defaults[key];
       }
-      if (!isOptionValue(optv, spec.optionSchema)) return null;
-      return {
-        id,
-        scope: spec.scope,
-        option: optv as Record<string, number | boolean | string>,
-        invoke: spec.bind(optv),
-      };
+      if (!isOptionValue(optv, spec.optionSchema)) return;
+      return spec.run(optv);
     },
   };
 }

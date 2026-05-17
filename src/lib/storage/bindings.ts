@@ -3,7 +3,7 @@ import { storage } from "wxt/utils/storage";
 import { isTrigger, parseTrigger, type Trigger } from "../keys";
 import { log } from "../log";
 import { isScopeId } from "../scopes";
-import { ACTIONS, isValidActionId } from "../scopes/actions";
+import { isValidActionId } from "../scopes/actions";
 
 const isBinding = is.ObjectOf({
   id: is.String,
@@ -40,15 +40,6 @@ export async function loadBindings(): Promise<Binding[]> {
       continue;
     }
 
-    const instance = ACTIONS[row.actionId].build(row?.options ?? {});
-    if (!instance) {
-      log.warn("dropping binding: options failed schema", {
-        bindingId: row.id,
-        actionId: row.actionId,
-      });
-      continue;
-    }
-
     let triggers: Trigger[] | undefined;
     try {
       triggers = row.triggers?.map(parseTrigger);
@@ -67,7 +58,7 @@ export async function loadBindings(): Promise<Binding[]> {
       scope: row.scope,
       triggers,
       actionId: row.actionId,
-      options: instance.option,
+      options: row.options ?? {},
       enabled: row.enabled,
     };
     if (!isBinding(candidate)) {
