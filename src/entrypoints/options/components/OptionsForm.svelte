@@ -1,14 +1,14 @@
 <script lang="ts">
   import type { OptionSchema } from "@/lib/action";
 
-  type Props = {
+  interface Props {
     optionSchema: Record<string, OptionSchema>;
     defaults: Record<string, unknown>;
     values: Record<string, unknown>;
     onChange: (next: Record<string, unknown>) => void;
-  };
+  }
 
-  const { optionSchema, defaults, values, onChange }: Props = $props();
+  let { optionSchema, defaults, values, onChange }: Props = $props();
 
   // Defaults are surfaced for fields the binding hasn't filled in yet so the
   // UI shows what the action will actually receive (the loader will fill

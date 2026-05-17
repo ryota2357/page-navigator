@@ -8,13 +8,13 @@
   import OptionsForm from "./OptionsForm.svelte";
   import TriggerInput from "./TriggerInput.svelte";
 
-  type Props = {
+  interface Props {
     binding: Binding;
     onUpdate: (b: Binding) => void;
     onDelete: () => void;
-  };
+  }
 
-  const { binding, onUpdate, onDelete }: Props = $props();
+  let { binding, onUpdate, onDelete }: Props = $props();
 
   // `binding.actionId` is a registered ValidActionId, so the lookup and the
   // display formatting always resolve.

@@ -6,12 +6,12 @@
     type Trigger,
   } from "@/lib/keys";
 
-  type Props = {
+  interface Props {
     triggers: Trigger[];
     onChange: (next: Trigger[]) => void;
-  };
+  }
 
-  const { triggers, onChange }: Props = $props();
+  let { triggers, onChange }: Props = $props();
 
   // Each tag is one Trigger (a KeyToken sequence). + Add enters "capturing"
   // mode: keystrokes accumulate into `pending` until the user commits

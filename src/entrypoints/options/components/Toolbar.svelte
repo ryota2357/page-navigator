@@ -1,12 +1,12 @@
 <script lang="ts">
   import { SCOPES, type ScopeId } from "@/lib/scopes";
 
-  type Props = {
+  interface Props {
     currentScope: ScopeId;
     onAdd: () => void;
-  };
+  }
 
-  const { currentScope, onAdd }: Props = $props();
+  let { currentScope, onAdd }: Props = $props();
 
   const scopeLabel = $derived(SCOPES[currentScope].label);
 </script>

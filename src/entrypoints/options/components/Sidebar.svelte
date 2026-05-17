@@ -1,13 +1,13 @@
 <script lang="ts">
   import { SCOPE_IDS, SCOPES, type ScopeId } from "@/lib/scopes";
 
-  type Props = {
+  interface Props {
     selectedScope: ScopeId;
     bindingCounts: Record<string, number>;
     onSelectScope: (scope: ScopeId) => void;
-  };
+  }
 
-  const { selectedScope, bindingCounts, onSelectScope }: Props = $props();
+  let { selectedScope, bindingCounts, onSelectScope }: Props = $props();
 
   type SiteEntry = { id: ScopeId; label: string; count: number };
   const allSites: SiteEntry[] = $derived(

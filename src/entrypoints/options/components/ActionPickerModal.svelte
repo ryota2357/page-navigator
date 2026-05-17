@@ -9,14 +9,14 @@
   } from "@/lib/scopes/actions";
   import { actionDisplay } from "../actionDisplay";
 
-  type Props = {
+  interface Props {
     bindingScope: ScopeId;
     currentActionId: ValidActionId;
     onClose: () => void;
     onPick: (id: ValidActionId, action: Action) => void;
-  };
+  }
 
-  const { bindingScope, currentActionId, onClose, onPick }: Props = $props();
+  let { bindingScope, currentActionId, onClose, onPick }: Props = $props();
 
   let query = $state("");
   let focusIdx = $state(0);

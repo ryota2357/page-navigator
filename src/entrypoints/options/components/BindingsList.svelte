@@ -2,14 +2,14 @@
   import type { Binding } from "@/lib/storage/bindings";
   import BindingRow from "./BindingRow.svelte";
 
-  type Props = {
+  interface Props {
     bindings: Binding[];
     onUpdate: (b: Binding) => void;
     onDelete: (id: string) => void;
     onAdd: () => void;
-  };
+  }
 
-  const { bindings, onUpdate, onDelete, onAdd }: Props = $props();
+  let { bindings, onUpdate, onDelete, onAdd }: Props = $props();
 </script>
 
 <section class="bindings">

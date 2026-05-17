@@ -5,12 +5,12 @@
     type Settings,
   } from "@/lib/storage/settings";
 
-  type Props = {
+  interface Props {
     settings: Settings;
     onChange: (patch: Partial<Settings>) => void;
-  };
+  }
 
-  const { settings, onChange }: Props = $props();
+  let { settings, onChange }: Props = $props();
 
   function onTimeoutChange(raw: string) {
     const n = Number(raw);
