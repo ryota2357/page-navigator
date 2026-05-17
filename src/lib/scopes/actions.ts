@@ -1,5 +1,4 @@
-import { is } from "@core/unknownutil";
-import type { Action } from "../action";
+import type { Action, ActionId } from "../action";
 import { globalActions } from "./global";
 import { googleActions } from "./google";
 
@@ -10,17 +9,13 @@ import { googleActions } from "./google";
 // (action.ts ← scopes/* ← here).
 export const actions = [...globalActions, ...googleActions] as const;
 
-// The id of a registered action. NOT `Action["id"]` (which is plain `string`)
-// — this is the closed union of ids actually present in the registry above.
-export type ValidActionId = (typeof actions)[number]["id"];
-
-export const ACTION_IDS: readonly ValidActionId[] = actions.map((a) => a.id);
-
-// Runtime gate for that union — true iff the id is one the registry knows.
-export const isValidActionId = is.LiteralOneOf(ACTION_IDS);
+export const ACTION_IDS: readonly ActionId[] = actions.map((a) => a.id);
 
 // Keyed by each action's declared `id` (see `defineAction`) rather than by an
-// export's variable name, so the id has a single source of truth.
-export const ACTIONS = Object.fromEntries(
+// export's variable name, so the id has a single source of truth. The Record
+// type is intentionally optimistic: lookups for unknown ids return undefined
+// at runtime, and callers handling stored bindings should treat the result
+// as possibly missing.
+export const ACTIONS: Record<ActionId, Action> = Object.fromEntries(
   actions.map((a) => [a.id, a]),
-) as Record<ValidActionId, Action>;
+) as Record<ActionId, Action>;

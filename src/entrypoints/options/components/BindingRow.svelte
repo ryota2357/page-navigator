@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { Action } from "@/lib/action";
+  import type { Action, ActionId } from "@/lib/action";
   import type { Trigger } from "@/lib/keys";
   import type { ScopeId } from "@/lib/scopes";
-  import { ACTIONS, type ValidActionId } from "@/lib/scopes/actions";
+  import { ACTIONS } from "@/lib/scopes/actions";
   import type { Binding } from "@/lib/storage";
   import { actionDisplay } from "../actionDisplay";
   import ActionPickerModal from "./ActionPickerModal.svelte";
@@ -43,7 +43,7 @@
   // from `binding` on every entry into edit mode, so Cancel just flips
   // `editing` off and the in-flight values are dropped on the next entry.
   let triggers = $state<Trigger[]>([]);
-  let actionId = $state<ValidActionId | null>(null);
+  let actionId = $state<ActionId | null>(null);
   let options = $state<Record<string, unknown>>({});
 
   $effect(() => {
@@ -73,7 +73,7 @@
   // the saved binding would be silently dropped by the loader.
   const canCommit = $derived(actionId !== null && triggers.length > 0);
 
-  function pickAction(nextId: ValidActionId, next: Action) {
+  function pickAction(nextId: ActionId, next: Action) {
     pickerOpen = false;
     if (nextId === actionId) return;
     // Different actions have different option shapes; carrying values

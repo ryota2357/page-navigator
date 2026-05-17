@@ -10,8 +10,7 @@ const byPixelOptionSchema = {
   smooth: { kind: "boolean", label: "Smooth scroll" },
 } as const;
 
-export const scrollDownAction = defineAction("scrollDown", {
-  scope: "global",
+export const scrollDownAction = defineAction("global.scrollDown", {
   description: "Scroll down by a fixed amount.",
   optionSchema: byPixelOptionSchema,
   defaults: { amount: 100, smooth: false },
@@ -23,8 +22,7 @@ export const scrollDownAction = defineAction("scrollDown", {
   },
 });
 
-export const scrollUpAction = defineAction("scrollUp", {
-  scope: "global",
+export const scrollUpAction = defineAction("global.scrollUp", {
   description: "Scroll up by a fixed amount.",
   optionSchema: byPixelOptionSchema,
   defaults: { amount: 100, smooth: false },
@@ -36,8 +34,7 @@ export const scrollUpAction = defineAction("scrollUp", {
   },
 });
 
-export const scrollLeftAction = defineAction("scrollLeft", {
-  scope: "global",
+export const scrollLeftAction = defineAction("global.scrollLeft", {
   description: "Scroll left by a fixed amount.",
   optionSchema: byPixelOptionSchema,
   defaults: { amount: 100, smooth: false },
@@ -49,8 +46,7 @@ export const scrollLeftAction = defineAction("scrollLeft", {
   },
 });
 
-export const scrollRightAction = defineAction("scrollRight", {
-  scope: "global",
+export const scrollRightAction = defineAction("global.scrollRight", {
   description: "Scroll right by a fixed amount.",
   optionSchema: byPixelOptionSchema,
   defaults: { amount: 100, smooth: false },
@@ -73,8 +69,7 @@ const byPageOptionSchema = {
   smooth: { kind: "boolean", label: "Smooth scroll" },
 } as const;
 
-export const scrollPageDownAction = defineAction("scrollPageDown", {
-  scope: "global",
+export const scrollPageDownAction = defineAction("global.scrollPageDown", {
   description: "Scroll down by a fraction of the viewport height.",
   optionSchema: byPageOptionSchema,
   defaults: { fraction: 0.85, smooth: false },
@@ -86,8 +81,7 @@ export const scrollPageDownAction = defineAction("scrollPageDown", {
   },
 });
 
-export const scrollPageUpAction = defineAction("scrollPageUp", {
-  scope: "global",
+export const scrollPageUpAction = defineAction("global.scrollPageUp", {
   description: "Scroll up by a fraction of the viewport height.",
   optionSchema: byPageOptionSchema,
   defaults: { fraction: 0.85, smooth: false },
@@ -103,8 +97,7 @@ const toEdgeOptionSchema = {
   smooth: { kind: "boolean", label: "Smooth scroll" },
 } as const;
 
-export const scrollToTopAction = defineAction("scrollToTop", {
-  scope: "global",
+export const scrollToTopAction = defineAction("global.scrollToTop", {
   description: "Jump to the very top of the page.",
   optionSchema: toEdgeOptionSchema,
   defaults: { smooth: false },
@@ -116,8 +109,7 @@ export const scrollToTopAction = defineAction("scrollToTop", {
   },
 });
 
-export const scrollToBottomAction = defineAction("scrollToBottom", {
-  scope: "global",
+export const scrollToBottomAction = defineAction("global.scrollToBottom", {
   description: "Jump to the very bottom of the page.",
   optionSchema: toEdgeOptionSchema,
   defaults: { smooth: false },
@@ -129,8 +121,7 @@ export const scrollToBottomAction = defineAction("scrollToBottom", {
   },
 });
 
-export const scrollToLeftAction = defineAction("scrollToLeft", {
-  scope: "global",
+export const scrollToLeftAction = defineAction("global.scrollToLeft", {
   description: "Jump to the leftmost edge of the page.",
   optionSchema: toEdgeOptionSchema,
   defaults: { smooth: false },
@@ -142,8 +133,7 @@ export const scrollToLeftAction = defineAction("scrollToLeft", {
   },
 });
 
-export const scrollToRightAction = defineAction("scrollToRight", {
-  scope: "global",
+export const scrollToRightAction = defineAction("global.scrollToRight", {
   description: "Jump to the rightmost edge of the page.",
   optionSchema: toEdgeOptionSchema,
   defaults: { smooth: false },

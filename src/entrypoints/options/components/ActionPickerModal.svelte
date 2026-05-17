@@ -1,20 +1,16 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import type { Action, OptionSchema } from "@/lib/action";
+  import type { Action, ActionId, OptionSchema } from "@/lib/action";
   import { SCOPES, type ScopeId } from "@/lib/scopes";
-  import {
-    ACTION_IDS,
-    ACTIONS,
-    type ValidActionId,
-  } from "@/lib/scopes/actions";
+  import { ACTION_IDS, ACTIONS } from "@/lib/scopes/actions";
   import { actionDisplay } from "../actionDisplay";
   import Icon from "./Icon.svelte";
 
   interface Props {
     bindingScope: ScopeId;
-    currentActionId: ValidActionId | null;
+    currentActionId: ActionId | null;
     onClose: () => void;
-    onPick: (id: ValidActionId, action: Action) => void;
+    onPick: (id: ActionId, action: Action) => void;
   }
 
   let { bindingScope, currentActionId, onClose, onPick }: Props = $props();
@@ -46,7 +42,7 @@
   });
 
   type Item = {
-    id: ValidActionId;
+    id: ActionId;
     action: Action;
     idx: number;
     name: string;
@@ -55,7 +51,7 @@
   const items = $derived.by<Item[]>(() => {
     // Site-specific actions float above globals because that's why the user
     // opened the picker on a site scope.
-    const globalLast = (id: ValidActionId) =>
+    const globalLast = (id: ActionId) =>
       ACTIONS[id].scope === "global" ? 1 : 0;
     const ordered = filteredIds
       .slice()

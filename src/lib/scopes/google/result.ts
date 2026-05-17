@@ -40,7 +40,6 @@ const focusOptionSchema = {
 } as const;
 
 export const focusNextResultAction = defineAction("google.focusNextResult", {
-  scope: "google",
   description: "Move focus to the next search result.",
   optionSchema: focusOptionSchema,
   defaults: { wrap: false },
@@ -48,7 +47,6 @@ export const focusNextResultAction = defineAction("google.focusNextResult", {
 });
 
 export const focusPrevResultAction = defineAction("google.focusPrevResult", {
-  scope: "google",
   description: "Move focus to the previous search result.",
   optionSchema: focusOptionSchema,
   defaults: { wrap: false },
@@ -56,7 +54,6 @@ export const focusPrevResultAction = defineAction("google.focusPrevResult", {
 });
 
 export const openResultAction = defineAction("google.openResult", {
-  scope: "google",
   description: "Activate the currently focused search result.",
   optionSchema: { newTab: { kind: "boolean", label: "Open in new tab" } },
   defaults: { newTab: false },

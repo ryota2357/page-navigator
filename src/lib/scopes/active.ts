@@ -1,6 +1,6 @@
 import type { Trigger } from "@/lib/keys";
-import type { ScopeId } from "@/lib/scopes";
 import type { Binding } from "@/lib/storage";
+import type { ScopeId } from "./index";
 
 // Cross-scope precedence is shadowing, not conflict: non-global scopes win
 // over global on the exact same trigger sequence. Prefix overlap (e.g.

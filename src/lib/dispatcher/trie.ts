@@ -1,8 +1,7 @@
 import type { KeyToken } from "@/lib/keys";
 import { log } from "@/lib/log";
-import type { ScopeId } from "@/lib/scopes";
-import type { ValidActionId } from "@/lib/scopes/actions";
 import type { Binding } from "@/lib/storage";
+import { ActionId } from "../action";
 
 export type Leaf =
   | {
@@ -12,8 +11,7 @@ export type Leaf =
   | {
       conflicted?: false;
       bindingId: string;
-      scope: ScopeId;
-      actionId: ValidActionId;
+      actionId: ActionId;
       options: Record<string, unknown>;
     };
 
@@ -56,7 +54,6 @@ export function compileTrie(bindings: ReadonlyArray<Binding>): TrieNode {
       if (!node.leaf) {
         node.leaf = {
           bindingId: b.id,
-          scope: b.scope,
           actionId: b.actionId,
           options: b.options,
         };

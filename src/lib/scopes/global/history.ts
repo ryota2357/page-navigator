@@ -1,7 +1,6 @@
 import { defineAction } from "@/lib/action";
 
-export const goHistoryBackAction = defineAction("goHistoryBack", {
-  scope: "global",
+export const goHistoryBackAction = defineAction("global.goHistoryBack", {
   description: "Go back one step in the browser history.",
   optionSchema: {},
   defaults: {},
@@ -10,8 +9,7 @@ export const goHistoryBackAction = defineAction("goHistoryBack", {
   },
 });
 
-export const goHistoryForwardAction = defineAction("goHistoryForward", {
-  scope: "global",
+export const goHistoryForwardAction = defineAction("global.goHistoryForward", {
   description: "Go forward one step in the browser history.",
   optionSchema: {},
   defaults: {},

@@ -1,15 +1,15 @@
 import { is, type PredicateType } from "@core/unknownutil";
+import { isActionId } from "../action";
 import { isTrigger } from "../keys";
 import { log } from "../log";
 import { isScopeId } from "../scopes";
-import { isValidActionId } from "../scopes/actions";
 import { defineStorageItem } from "./storage";
 
 const isBinding = is.ObjectOf({
   id: is.String,
   scope: isScopeId,
   triggers: is.ArrayOf(isTrigger),
-  actionId: isValidActionId,
+  actionId: isActionId,
   options: is.RecordObject,
   enabled: is.Boolean,
 });

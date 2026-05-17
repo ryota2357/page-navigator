@@ -1,13 +1,12 @@
 import { defineAction } from "@/lib/action";
 import { findSubTabLink, type SubTabId } from "./selectors";
 
-function defineSubTabAction<Id extends string>(
+function defineSubTabAction<Id extends `google.${string}`>(
   id: Id,
   description: string,
   tab: SubTabId,
 ) {
   return defineAction(id, {
-    scope: "google",
     description,
     optionSchema: {},
     defaults: {},

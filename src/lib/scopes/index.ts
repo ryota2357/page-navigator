@@ -2,6 +2,8 @@ import { is, type PredicateType } from "@core/unknownutil";
 import { globalScope } from "./global";
 import { googleScope } from "./google";
 
+export { activeBindings } from "./active";
+
 export const SCOPE_IDS = ["global", "google"] as const;
 
 export const isScopeId = is.LiteralOneOf(SCOPE_IDS);

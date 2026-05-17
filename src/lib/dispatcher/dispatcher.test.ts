@@ -11,7 +11,7 @@ function bindScrollDown(id: string, triggers: string[][]): Binding {
     id,
     scope: "global",
     triggers: triggers.map(parseTrigger),
-    actionId: "scrollDown",
+    actionId: "global.scrollDown",
     options: { amount: 1, smooth: false },
     enabled: true,
   };
@@ -22,7 +22,7 @@ describe("compileTrie", () => {
     const trie = compileTrie([bindScrollDown("b1", [["j"]])]);
     expect(trie.children?.get(parse("j"))?.leaf).toMatchObject({
       bindingId: "b1",
-      actionId: "scrollDown",
+      actionId: "global.scrollDown",
     });
   });
 

@@ -1,10 +1,21 @@
 import { is } from "@core/unknownutil";
-import type { ScopeId } from "./scopes";
+import { type ScopeId, isScopeId } from "./scopes";
+
+export type ActionId = `${ScopeId}.${string}`;
+
+export function isActionId(value: unknown): value is ActionId {
+  if (!is.String(value)) return false;
+  const dotIdx = value.indexOf(".");
+  if (dotIdx === -1) return false;
+  const scope = value.slice(0, dotIdx);
+  const rest = value.slice(dotIdx + 1);
+  return isScopeId(scope) && rest.length > 1;
+}
 
 export type Action<
   S extends Record<string, OptionSchema> = Record<string, OptionSchema>,
 > = {
-  id: string;
+  id: ActionId;
   scope: ScopeId;
   description: string;
   optionSchema: S;
@@ -75,21 +86,22 @@ function isOptionValue<S extends Record<string, OptionSchema>>(
 }
 
 export function defineAction<
-  const Id extends string,
+  const Id extends ActionId,
   S extends Record<string, OptionSchema>,
 >(
   id: Id,
   spec: {
-    scope: ScopeId;
     description: string;
     optionSchema: S;
     defaults: OptionValue<S>;
     run: (options: OptionValue<S>) => void | Promise<void>;
   },
 ): Action<S> & { id: Id } {
+  const dotIdx = id.indexOf(".");
+  const scope = id.slice(0, dotIdx) as ScopeId;
   return {
     id,
-    scope: spec.scope,
+    scope,
     description: spec.description,
     optionSchema: spec.optionSchema,
     defaults: spec.defaults,

@@ -1,7 +1,7 @@
-import { activeBindings, Dispatcher } from "@/lib/dispatcher";
+import { Dispatcher } from "@/lib/dispatcher";
 import { encodeKeyToken, isImeComposing, isModifierKey } from "@/lib/keys";
 import { log } from "@/lib/log";
-import { resolveActiveScopes } from "@/lib/scopes";
+import { activeBindings, resolveActiveScopes } from "@/lib/scopes";
 import { bindingsItem, settingsItem } from "@/lib/storage";
 
 export default defineContentScript({
