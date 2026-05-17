@@ -3,12 +3,7 @@ import type { KeyToken } from "../keys";
 import { log } from "../log";
 import { ACTIONS } from "../scopes/actions";
 import type { Binding } from "../storage/bindings";
-import {
-  type ConcreteLeaf,
-  compileTrie,
-  type Leaf,
-  type TrieNode,
-} from "./trie";
+import { compileTrie, type Leaf, type TrieNode } from "./trie";
 
 // "passed" is the only outcome where the content script lets the keystroke
 // reach the page; "fired" and "consumed" both swallow it. "consumed" keeps
@@ -110,7 +105,10 @@ export class Dispatcher {
     }
   }
 
-  private reportResult(leaf: ConcreteLeaf, result: InvokeResult): void {
+  private reportResult(
+    leaf: Extract<Leaf, { conflicted?: false }>,
+    result: InvokeResult,
+  ): void {
     if (result.ok) return;
     log.warn("action did not run", {
       bindingId: leaf.bindingId,
@@ -120,7 +118,10 @@ export class Dispatcher {
     });
   }
 
-  private reportThrow(leaf: ConcreteLeaf, error: unknown): void {
+  private reportThrow(
+    leaf: Extract<Leaf, { conflicted?: false }>,
+    error: unknown,
+  ): void {
     log.error("action threw", {
       bindingId: leaf.bindingId,
       actionId: leaf.actionId,

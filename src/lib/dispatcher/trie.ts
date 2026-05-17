@@ -4,20 +4,18 @@ import type { ScopeId } from "../scopes";
 import type { ValidActionId } from "../scopes/actions";
 import type { Binding } from "../storage/bindings";
 
-export type ConcreteLeaf = {
-  conflicted?: false;
-  bindingId: string;
-  scope: ScopeId;
-  actionId: ValidActionId;
-  options: Record<string, unknown>;
-};
-
-type ConflictedLeaf = {
-  conflicted: true;
-  bindingIds: string[];
-};
-
-export type Leaf = ConcreteLeaf | ConflictedLeaf;
+export type Leaf =
+  | {
+      conflicted: true;
+      bindingIds: string[];
+    }
+  | {
+      conflicted?: false;
+      bindingId: string;
+      scope: ScopeId;
+      actionId: ValidActionId;
+      options: Record<string, unknown>;
+    };
 
 export type TrieNode = {
   leaf?: Leaf;
