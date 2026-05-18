@@ -1,7 +1,6 @@
-import type { InvokeResult } from "@/lib/action";
+import type { Action, ActionId, InvokeResult } from "@/lib/action";
 import type { KeyToken } from "@/lib/keys";
 import { log } from "@/lib/log";
-import { ACTIONS } from "@/lib/scopes/actions";
 import type { Binding } from "@/lib/storage";
 import { compileTrie, type Leaf, type TrieNode } from "./trie";
 
@@ -17,9 +16,11 @@ export class Dispatcher {
   private cursor: TrieNode | null = null;
   private timer: TimerHandle | null = null;
   private timeoutMs: number;
+  private actions: Record<ActionId, Action>;
 
-  constructor(initialTimeoutMs: number) {
+  constructor(initialTimeoutMs: number, actions: Record<ActionId, Action>) {
     this.timeoutMs = initialTimeoutMs;
+    this.actions = actions;
   }
 
   rebuild(bindings: ReadonlyArray<Binding>): void {
@@ -91,7 +92,7 @@ export class Dispatcher {
       return;
     }
     try {
-      const ret = ACTIONS[leaf.actionId].invoke(leaf.options);
+      const ret = this.actions[leaf.actionId].invoke(leaf.options);
       if (ret instanceof Promise) {
         ret.then(
           (result) => this.reportResult(leaf, result),
