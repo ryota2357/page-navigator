@@ -2,6 +2,7 @@ import { Dispatcher } from "@/lib/dispatcher";
 import { encodeKeyToken, isImeComposing, isModifierKey } from "@/lib/keys";
 import { log } from "@/lib/log";
 import { activeBindings, resolveActiveScopes } from "@/lib/scopes";
+import { ACTIONS } from "@/lib/scopes/actions";
 import { bindingsItem, settingsItem } from "@/lib/storage";
 
 export default defineContentScript({
@@ -16,7 +17,7 @@ export default defineContentScript({
 
     const settings = await settingsItem.getValue();
     const allBindings = await bindingsItem.getValue();
-    const dispatcher = new Dispatcher(settings.sequenceTimeoutMs);
+    const dispatcher = new Dispatcher(settings.sequenceTimeoutMs, ACTIONS);
     dispatcher.rebuild(activeBindings(allBindings, activeScopes));
 
     bindingsItem.watch((newValue) => {

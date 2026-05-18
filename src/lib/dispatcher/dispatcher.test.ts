@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parse, parseTrigger } from "@/lib/keys";
+import { ACTIONS } from "@/lib/scopes/actions";
 import type { Binding } from "@/lib/storage";
 import { Dispatcher } from "./dispatcher";
 import { compileTrie } from "./trie";
@@ -73,7 +74,7 @@ describe("Dispatcher.feed", () => {
   });
 
   it("fires on a single-key leaf and runs the action", () => {
-    dispatcher = new Dispatcher(1000);
+    dispatcher = new Dispatcher(1000, ACTIONS);
     dispatcher.rebuild([bindScrollDown("b1", [["j"]])]);
     expect(dispatcher.feed(parse("j"))).toBe("fired");
     expect(window.scrollBy).toHaveBeenCalledOnce();
@@ -81,7 +82,7 @@ describe("Dispatcher.feed", () => {
   });
 
   it("returns 'consumed' for a prefix and 'fired' on completion", () => {
-    dispatcher = new Dispatcher(1000);
+    dispatcher = new Dispatcher(1000, ACTIONS);
     dispatcher.rebuild([bindScrollDown("b1", [["g", "g"]])]);
     expect(dispatcher.feed(parse("g"))).toBe("consumed");
     expect(dispatcher.isMidSequence()).toBe(true);
@@ -91,14 +92,14 @@ describe("Dispatcher.feed", () => {
   });
 
   it("returns 'passed' for an unknown key at root", () => {
-    dispatcher = new Dispatcher(1000);
+    dispatcher = new Dispatcher(1000, ACTIONS);
     dispatcher.rebuild([bindScrollDown("b1", [["j"]])]);
     expect(dispatcher.feed(parse("x"))).toBe("passed");
     expect(window.scrollBy).not.toHaveBeenCalled();
   });
 
   it("aborts mid-sequence on an unmatched extension", () => {
-    dispatcher = new Dispatcher(1000);
+    dispatcher = new Dispatcher(1000, ACTIONS);
     dispatcher.rebuild([bindScrollDown("b1", [["g", "g"]])]);
     expect(dispatcher.feed(parse("g"))).toBe("consumed");
     expect(dispatcher.feed(parse("x"))).toBe("passed");
@@ -107,7 +108,7 @@ describe("Dispatcher.feed", () => {
   });
 
   it("on timeout at a leaf+children node, fires the leaf", () => {
-    dispatcher = new Dispatcher(500);
+    dispatcher = new Dispatcher(500, ACTIONS);
     dispatcher.rebuild([
       bindScrollDown("b1", [["g"]]),
       bindScrollDown("b2", [["g", "g"]]),
@@ -124,7 +125,7 @@ describe("Dispatcher.feed", () => {
   });
 
   it("rebuild() resets the cursor", () => {
-    dispatcher = new Dispatcher(1000);
+    dispatcher = new Dispatcher(1000, ACTIONS);
     dispatcher.rebuild([bindScrollDown("b1", [["g", "g"]])]);
     expect(dispatcher.feed(parse("g"))).toBe("consumed");
     dispatcher.rebuild([bindScrollDown("b2", [["j"]])]);
@@ -133,7 +134,7 @@ describe("Dispatcher.feed", () => {
   });
 
   it("does not fire a conflicted leaf", () => {
-    dispatcher = new Dispatcher(1000);
+    dispatcher = new Dispatcher(1000, ACTIONS);
     dispatcher.rebuild([
       bindScrollDown("b1", [["x"]]),
       bindScrollDown("b2", [["x"]]),
