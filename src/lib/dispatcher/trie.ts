@@ -1,7 +1,7 @@
 import type { KeyToken } from "@/lib/keys";
 import { log } from "@/lib/log";
 import type { Binding } from "@/lib/storage";
-import { ActionId } from "../action";
+import type { ActionId } from "../action";
 
 export type Leaf =
   | {

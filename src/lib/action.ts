@@ -1,5 +1,5 @@
 import { is } from "@core/unknownutil";
-import { type ScopeId, isScopeId } from "./scopes";
+import { isScopeId, type ScopeId } from "./scopes";
 
 export type ActionId = `${ScopeId}.${string}`;
 
