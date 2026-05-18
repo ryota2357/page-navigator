@@ -23,11 +23,9 @@ export function sortable<T extends { id: string }>(
   function readOrder(): T[] {
     const ids = Array.from(node.children)
       .map((el) => (el as HTMLElement).dataset.id)
-      .filter((id): id is string => !!id);
+      .filter((id) => id !== undefined);
     const byId = new Map(current.items.map((item) => [item.id, item]));
-    return ids
-      .map((id) => byId.get(id))
-      .filter((item): item is T => item !== undefined);
+    return ids.map((id) => byId.get(id)).filter((item) => item !== undefined);
   }
 
   const options: Options = {
