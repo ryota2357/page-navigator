@@ -1,8 +1,8 @@
+import type { Action, ActionId } from "@/lib/action";
 import { Dispatcher } from "@/lib/dispatcher";
 import { encodeKeyToken, isImeComposing, isModifierKey } from "@/lib/keys";
 import { log } from "@/lib/log";
-import { activeBindings, resolveActiveScopes } from "@/lib/scopes";
-import { ACTIONS } from "@/lib/scopes/actions";
+import { activeBindings, resolveActiveScopes, scopes } from "@/lib/scopes";
 import { bindingsItem, settingsItem } from "@/lib/storage";
 
 export default defineContentScript({
@@ -14,10 +14,15 @@ export default defineContentScript({
     // Fixed at init: we don't observe SPA URL changes for rescoping yet.
     // Google's SERP is a full nav per query so this holds in practice.
     const activeScopes = resolveActiveScopes(location.href);
+    const actionMap: Record<ActionId, Action> = Object.fromEntries(
+      [...activeScopes]
+        .flatMap((id) => scopes[id].actions)
+        .map((a) => [a.id, a]),
+    );
 
     const settings = await settingsItem.getValue();
     const allBindings = await bindingsItem.getValue();
-    const dispatcher = new Dispatcher(settings.sequenceTimeoutMs, ACTIONS);
+    const dispatcher = new Dispatcher(settings.sequenceTimeoutMs, actionMap);
     dispatcher.rebuild(activeBindings(allBindings, activeScopes));
 
     bindingsItem.watch((newValue) => {

@@ -1,40 +1,39 @@
 <script lang="ts">
   import { tick } from "svelte";
   import type { Action, ActionId, OptionSchema } from "@/lib/action";
-  import { SCOPES, type ScopeId } from "@/lib/scopes";
-  import { ACTION_IDS, ACTIONS } from "@/lib/scopes/actions";
+  import { type ScopeId, scopes } from "@/lib/scopes";
   import { actionDisplay } from "../actionDisplay";
   import Icon from "./Icon.svelte";
 
   interface Props {
+    actions: Record<ActionId, Action>;
     bindingScope: ScopeId;
     currentActionId: ActionId | null;
     onClose: () => void;
     onPick: (id: ActionId, action: Action) => void;
   }
 
-  let { bindingScope, currentActionId, onClose, onPick }: Props = $props();
+  let { actions, bindingScope, currentActionId, onClose, onPick }: Props =
+    $props();
 
   let query = $state("");
   let focusIdx = $state(0);
   let dialog: HTMLDialogElement | undefined = $state();
   let inputEl: HTMLInputElement | undefined = $state();
 
-  // Global actions work under any scope; site actions only under their own —
-  // the picker must never offer an action the runtime would refuse.
-  const compatibleIds = $derived(
-    ACTION_IDS.filter((id) => {
-      const scope = ACTIONS[id].scope;
-      return scope === "global" || scope === bindingScope;
-    }),
-  );
+  // `actions` is already pre-filtered upstream to global + bindingScope, so
+  // every entry here is one the runtime would accept under bindingScope.
+  const compatibleActions = $derived(Object.values(actions));
 
-  const filteredIds = $derived.by(() => {
+  const filteredActions = $derived.by(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return compatibleIds;
-    return compatibleIds.filter((id) => {
-      const action = ACTIONS[id];
-      const haystack = [id, action.description, SCOPES[action.scope].label]
+    if (!q) return compatibleActions;
+    return compatibleActions.filter((action) => {
+      const haystack = [
+        action.id,
+        action.description,
+        scopes[action.scope].label,
+      ]
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
@@ -51,16 +50,15 @@
   const items = $derived.by<Item[]>(() => {
     // Site-specific actions float above globals because that's why the user
     // opened the picker on a site scope.
-    const globalLast = (id: ActionId) =>
-      ACTIONS[id].scope === "global" ? 1 : 0;
-    const ordered = filteredIds
+    const globalLast = (action: Action) => (action.scope === "global" ? 1 : 0);
+    const ordered = filteredActions
       .slice()
       .sort((a, b) => globalLast(a) - globalLast(b));
-    return ordered.map((id, idx) => {
-      const d = actionDisplay(id);
+    return ordered.map((action, idx) => {
+      const d = actionDisplay(action);
       return {
-        id,
-        action: ACTIONS[id],
+        id: action.id,
+        action,
         idx,
         name: d.name,
         badgeLabel: d.badgeLabel,
@@ -140,7 +138,7 @@
         {#if bindingScope === "global"}
           Global actions only
         {:else}
-          Global + {SCOPES[bindingScope].label} actions
+          Global + {scopes[bindingScope].label} actions
         {/if}
       </p>
     </div>

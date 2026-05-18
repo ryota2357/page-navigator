@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SCOPES, type ScopeId } from "@/lib/scopes";
+  import { type ScopeId, scopes } from "@/lib/scopes";
   import { siteDisplay } from "../siteDisplay";
   import { sortable } from "../sortable.svelte";
   import Icon from "./Icon.svelte";
@@ -46,7 +46,7 @@
   const sites = $derived<SiteEntry[]>(
     siteOrder.map((id) => ({
       id,
-      label: SCOPES[id].label,
+      label: scopes[id].label,
       display: siteDisplay(id),
       active: view === "edit" && selectedScope === id,
     })),

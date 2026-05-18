@@ -1,11 +1,6 @@
 import * as result from "./result";
 import * as tabs from "./tabs";
 
-export const googleScope = {
-  label: "Google",
-  urlPattern: /^https:\/\/www\.google\.com\/search/,
-} as const;
-
 export const googleActions = [
   result.focusNextResultAction,
   result.focusPrevResultAction,
