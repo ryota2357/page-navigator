@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Action, ActionId } from "@/lib/action";
   import type { ScopeId } from "@/lib/scopes";
   import type { Binding } from "@/lib/storage";
   import { bindingHasConflict } from "../conflicts";
@@ -10,6 +11,7 @@
   // only sees committed bindings; the new row is appended visually below.
   interface Props {
     bindings: Binding[];
+    actions: Record<ActionId, Action>;
     newRowId: string | null;
     scopeId: ScopeId;
     editingId: string | null;
@@ -23,6 +25,7 @@
 
   let {
     bindings,
+    actions,
     newRowId,
     scopeId,
     editingId,
@@ -53,6 +56,7 @@
     {#each bindings as b (b.id)}
       <BindingRow
         binding={b}
+        {actions}
         {scopeId}
         rowId={b.id}
         editing={editingId === b.id}
@@ -69,6 +73,7 @@
     <div class="new-row">
       <BindingRow
         binding={null}
+        {actions}
         {scopeId}
         rowId={newRowId}
         editing={editingId === newRowId}

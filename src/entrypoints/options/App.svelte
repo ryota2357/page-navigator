@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { SCOPE_IDS, type ScopeId } from "@/lib/scopes";
+  import type { Action, ActionId } from "@/lib/action";
+  import { type ScopeId, scopeIds, scopes } from "@/lib/scopes";
   import {
     type Binding,
     bindingsItem,
@@ -25,7 +26,7 @@
   let loaded = $state(false);
 
   // siteOrder is presentation-only; not persisted. Resets to "all
-  // configured sites in SCOPE_IDS order" whenever bindings load.
+  // configured sites in scopeIds order" whenever bindings load.
   let siteOrder = $state<ScopeId[]>([]);
   let showAddSite = $state(false);
   let showImport = $state(false);
@@ -57,7 +58,7 @@
     bindings = await bindingsItem.getValue();
     settings = await settingsItem.getValue();
     const configured = new Set(bindings.map((b) => b.scope));
-    siteOrder = SCOPE_IDS.filter((id) => id !== "global" && configured.has(id));
+    siteOrder = scopeIds.filter((id) => id !== "global" && configured.has(id));
     loaded = true;
     bindingsItem.watch((v) => {
       bindings = v;
@@ -128,6 +129,15 @@
   const visibleBindings = $derived(
     bindings.filter((b) => b.scope === selectedScope),
   );
+
+  const visibleActions = $derived<Record<ActionId, Action>>(
+    Object.fromEntries(
+      [
+        ...scopes.global.actions,
+        ...(selectedScope === "global" ? [] : scopes[selectedScope].actions),
+      ].map((a) => [a.id, a]),
+    ),
+  );
 </script>
 
 <div class="app">
@@ -164,6 +174,7 @@
         <BindingsView
           scopeId={selectedScope}
           bindings={visibleBindings}
+          actions={visibleActions}
           onAdd={addBinding}
           onUpdate={updateBinding}
           onDelete={deleteBinding}

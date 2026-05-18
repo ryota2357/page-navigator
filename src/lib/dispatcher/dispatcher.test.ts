@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Action, ActionId } from "@/lib/action";
 import { parse, parseTrigger } from "@/lib/keys";
-import { ACTIONS } from "@/lib/scopes/actions";
+import { scopes } from "@/lib/scopes";
 import type { Binding } from "@/lib/storage";
 import { Dispatcher } from "./dispatcher";
 import { compileTrie } from "./trie";
+
+const ACTIONS: Record<ActionId, Action> = Object.fromEntries(
+  scopes.global.actions.map((a) => [a.id, a]),
+);
 
 // KeyToken / Trigger are branded — mint them through the real parser so the
 // tests speak the same canonical form the dispatcher does.

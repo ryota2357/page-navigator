@@ -2,7 +2,6 @@
   import type { Action, ActionId } from "@/lib/action";
   import type { Trigger } from "@/lib/keys";
   import type { ScopeId } from "@/lib/scopes";
-  import { ACTIONS } from "@/lib/scopes/actions";
   import type { Binding } from "@/lib/storage";
   import { actionDisplay } from "../actionDisplay";
   import ActionPickerModal from "./ActionPickerModal.svelte";
@@ -14,6 +13,7 @@
 
   interface Props {
     binding: Binding | null;
+    actions: Record<ActionId, Action>;
     scopeId: ScopeId;
     rowId: string;
     editing: boolean;
@@ -27,6 +27,7 @@
 
   let {
     binding,
+    actions,
     scopeId,
     rowId,
     editing,
@@ -57,16 +58,16 @@
   let captureOpen = $state(false);
 
   const editAction = $derived<Action | null>(
-    actionId === null ? null : ACTIONS[actionId],
+    actionId === null ? null : (actions[actionId] ?? null),
   );
   const editDisplay = $derived(
-    actionId === null ? null : actionDisplay(actionId),
+    editAction === null ? null : actionDisplay(editAction),
   );
   const viewAction = $derived<Action | null>(
-    binding === null ? null : ACTIONS[binding.actionId],
+    binding === null ? null : (actions[binding.actionId] ?? null),
   );
   const viewDisplay = $derived(
-    binding === null ? null : actionDisplay(binding.actionId),
+    viewAction === null ? null : actionDisplay(viewAction),
   );
 
   // Done is gated on a real action and at least one trigger — otherwise
@@ -292,6 +293,7 @@
 
 {#if pickerOpen}
   <ActionPickerModal
+    {actions}
     bindingScope={binding?.scope ?? scopeId}
     currentActionId={actionId}
     onClose={() => {

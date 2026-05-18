@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SCOPE_IDS, SCOPES, type ScopeId } from "@/lib/scopes";
+  import { type ScopeId, scopeIds, scopes } from "@/lib/scopes";
   import Icon from "./Icon.svelte";
 
   interface Props {
@@ -21,9 +21,9 @@
 
   const available = $derived.by(() => {
     const ids = new Set<ScopeId>(existing);
-    return SCOPE_IDS.filter((id) => id !== "global" && !ids.has(id)).map(
-      (id) => ({ id, label: SCOPES[id].label }),
-    );
+    return scopeIds
+      .filter((id) => id !== "global" && !ids.has(id))
+      .map((id) => ({ id, label: scopes[id].label }));
   });
 
   const filtered = $derived.by(() => {

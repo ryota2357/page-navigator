@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { SCOPES, type ScopeId } from "@/lib/scopes";
-  import { ACTIONS } from "@/lib/scopes/actions";
+  import type { Action, ActionId } from "@/lib/action";
+  import { type ScopeId, scopes } from "@/lib/scopes";
   import type { Binding } from "@/lib/storage";
   import { findConflicts, serializeTrigger } from "../conflicts";
   import { siteDisplay } from "../siteDisplay";
@@ -12,14 +12,22 @@
   interface Props {
     scopeId: ScopeId;
     bindings: Binding[];
+    actions: Record<ActionId, Action>;
     onAdd: (next: Binding) => void;
     onUpdate: (next: Binding) => void;
     onDelete: (id: string) => void;
     onReorder: (next: Binding[]) => void;
   }
 
-  let { scopeId, bindings, onAdd, onUpdate, onDelete, onReorder }: Props =
-    $props();
+  let {
+    scopeId,
+    bindings,
+    actions,
+    onAdd,
+    onUpdate,
+    onDelete,
+    onReorder,
+  }: Props = $props();
 
   // A non-null `newRowId` means a fresh editable row is visible. The id is
   // fixed up-front so storage can adopt the row on commit unchanged.
@@ -44,7 +52,7 @@
     const q = query.trim().toLowerCase();
     if (!q) return bindings;
     return bindings.filter((b) => {
-      const action = ACTIONS[b.actionId];
+      const action = actions[b.actionId];
       const haystack = [
         b.actionId,
         action?.description ?? "",
@@ -56,7 +64,7 @@
     });
   });
 
-  const scopeLabel = $derived(SCOPES[scopeId].label);
+  const scopeLabel = $derived(scopes[scopeId].label);
   const display = $derived(siteDisplay(scopeId));
   const conflictCount = $derived(conflicts.size);
   const isEmpty = $derived(bindings.length === 0 && newRowId === null);
@@ -172,6 +180,7 @@
 
     <BindingsList
       bindings={filteredBindings}
+      {actions}
       {newRowId}
       {scopeId}
       {editingId}
