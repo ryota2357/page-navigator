@@ -6,6 +6,6 @@ export default defineConfig({
   modules: ["@wxt-dev/module-svelte"],
   manifestVersion: 3,
   manifest: {
-    permissions: ["storage"],
+    permissions: ["storage", "tabs", "sessions"],
   },
 });

@@ -1,5 +1,7 @@
 import * as history from "./history";
 import * as scroll from "./scroll";
+import * as tabs from "./tabs";
+import * as zoom from "./zoom";
 
 export const globalActions = [
   scroll.scrollDownAction,
@@ -14,4 +16,24 @@ export const globalActions = [
   scroll.scrollToRightAction,
   history.goHistoryBackAction,
   history.goHistoryForwardAction,
+  tabs.createTabAction,
+  tabs.nextTabAction,
+  tabs.previousTabAction,
+  tabs.firstTabAction,
+  tabs.lastTabAction,
+  tabs.duplicateTabAction,
+  tabs.closeTabAction,
+  tabs.restoreTabAction,
+  tabs.togglePinTabAction,
+  tabs.toggleMuteTabAction,
+  tabs.moveTabPreviousAction,
+  tabs.moveTabNextAction,
+  tabs.moveTabToNewWindowAction,
+  tabs.closeTabsBeforeAction,
+  tabs.closeTabsAfterAction,
+  tabs.closeOtherTabsAction,
+  zoom.setZoomAction,
+  zoom.zoomInAction,
+  zoom.zoomOutAction,
+  zoom.zoomResetAction,
 ] as const;
