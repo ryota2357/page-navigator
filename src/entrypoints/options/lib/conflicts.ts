@@ -1,16 +1,12 @@
 import type { Trigger } from "@/lib/keys";
 import type { Binding } from "@/lib/storage";
 
-// Serialise a Trigger to a string key so identical triggers (same sequence
-// of canonical KeyTokens) collapse to one map entry. Stable across sessions
-// because KeyToken itself is canonical.
+// Stable string key for a Trigger; identical sequences collapse to one entry.
 export function serializeTrigger(trigger: Trigger): string {
   return trigger.join(" ");
 }
 
-// Build the set of trigger-strings that appear on more than one binding
-// within the given list. Callers can then test individual bindings or
-// triggers against this set.
+// Trigger-strings appearing on more than one binding within the list.
 export function findConflicts(bindings: Binding[]): Set<string> {
   const owners = new Map<string, Set<string>>();
   for (const binding of bindings) {

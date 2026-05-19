@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { OptionSchema } from "@/lib/action";
+  import Toggle from "../ui/Toggle.svelte";
 
   interface Props {
     optionSchema: Record<string, OptionSchema>;
@@ -10,8 +11,8 @@
 
   let { optionSchema, defaults, values, onChange }: Props = $props();
 
-  // Show the default when no explicit value is set so the row matches what
-  // the loader will fill in on the next read.
+  // Fall back to the default when no explicit value is set so the row
+  // matches what the loader fills in on the next read.
   const fields = $derived(
     Object.keys(optionSchema).map((key) => ({
       key,
@@ -50,27 +51,20 @@
           >
         {:else if f.schema.kind === "boolean"}
           <div class="bool">
-            <button
-              type="button"
-              class="toggle"
-              data-on={String(f.value === true)}
-              onclick={() => setField(f.key, !(f.value === true))}
-              aria-label={f.schema.label}
-            >
-              <i></i>
-            </button>
-            <span class="bool-label"
-              >{f.value === true ? "true" : "false"}</span
-            >
+            <Toggle
+              pressed={f.value === true}
+              ariaLabel={f.schema.label}
+              onChange={(next) => setField(f.key, next)}
+            />
+            <span class="bool-label">
+              {f.value === true ? "true" : "false"}
+            </span>
           </div>
         {:else if f.schema.kind === "select"}
           <select
             value={typeof f.value === "string" ? f.value : ""}
             onchange={(e) =>
-              setField(
-                f.key,
-                (e.currentTarget as HTMLSelectElement).value,
-              )}
+              setField(f.key, (e.currentTarget as HTMLSelectElement).value)}
           >
             {#each f.schema.options as opt (opt)}
               <option value={opt}>{opt}</option>
@@ -146,34 +140,5 @@
     outline: 0;
     border-color: var(--text-2);
     background: var(--surface);
-  }
-  .toggle {
-    appearance: none;
-    width: 28px;
-    height: 16px;
-    border-radius: 999px;
-    background: var(--border-strong);
-    border: 0;
-    padding: 0;
-    position: relative;
-    cursor: default;
-    transition: background 0.15s;
-  }
-  .toggle[data-on="true"] {
-    background: var(--accent);
-  }
-  .toggle i {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    transition: transform 0.15s;
-  }
-  .toggle[data-on="true"] i {
-    transform: translateX(12px);
   }
 </style>

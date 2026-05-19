@@ -1,0 +1,80 @@
+:root {
+  --font-mono: ui-monospace, Consolas, "Liberation Mono", monospace;
+
+  --canvas: #fbfaf8;
+  --surface: #ffffff;
+  --subtle: #f4f3f0;
+  --hover: #efeeea;
+  --pressed: #e8e6e0;
+
+  --border: #e6e3dc;
+  --border-strong: #d4d0c7;
+  --border-input: #d8d4cc;
+
+  --text-1: #1a1815;
+  --text-2: #5a564e;
+  --text-3: #918b80;
+  --text-4: #b9b3a7;
+
+  --accent: #1a1815;
+  --accent-fg: #ffffff;
+
+  --warn: #b45309;
+  --warn-bg: #fef6e6;
+  --warn-bd: #f0d9a8;
+
+  --danger: #b42318;
+  --danger-bg: #fdecea;
+  --danger-bd: #f3c2bb;
+
+  --ok: #1f7a3a;
+  --ok-bg: #ecf5ee;
+
+  --site-tag: #6b21a8;
+  --site-bg: #f3ebfb;
+  --site-bd: #e1d0f3;
+
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+  --r-xl: 12px;
+
+  --shadow-pop:
+    0 1px 0 rgba(0, 0, 0, 0.04), 0 6px 18px rgba(20, 18, 15, 0.1),
+    0 1px 3px rgba(20, 18, 15, 0.06);
+  --shadow-modal:
+    0 1px 0 rgba(0, 0, 0, 0.04), 0 24px 60px rgba(20, 18, 15, 0.18);
+
+  --side-w: 220px;
+  --content-max: 1080px;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family:
+    YuGothic, "Yu Gothic", "ヒラギノ角ゴ ProN W3", "ＭＳ ゴシック", sans-serif;
+  font-size: 13px;
+  color: var(--text-1);
+  background: var(--canvas);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button {
+  font: inherit;
+}
+
+::selection {
+  background: #e7d6a8;
+}

@@ -1,15 +1,18 @@
 <script lang="ts">
+  import Globe from "@lucide/svelte/icons/globe";
+  import GripVertical from "@lucide/svelte/icons/grip-vertical";
+  import Plus from "@lucide/svelte/icons/plus";
+  import Settings from "@lucide/svelte/icons/settings";
   import { type ScopeId, scopes } from "@/lib/scopes";
-  import { siteDisplay } from "../siteDisplay";
-  import { sortable } from "../sortable.svelte";
-  import Icon from "./Icon.svelte";
+  import { siteBadge } from "../lib/display";
+  import SortableList from "../ui/SortableList.svelte";
 
-  type SidebarView = "edit" | "reference" | "preferences";
+  type SidebarView = "edit" | "preferences";
 
   type SiteEntry = {
     id: ScopeId;
     label: string;
-    display: ReturnType<typeof siteDisplay>;
+    badge: ReturnType<typeof siteBadge>;
     active: boolean;
   };
 
@@ -22,9 +25,6 @@
     onSelectScope: (scope: ScopeId) => void;
     onReorderSites: (next: ScopeId[]) => void;
     onShowAddSite: () => void;
-    onShowReference: () => void;
-    onShowImport: () => void;
-    onShowExport: () => void;
     onShowPreferences: () => void;
   }
 
@@ -37,9 +37,6 @@
     onSelectScope,
     onReorderSites,
     onShowAddSite,
-    onShowReference,
-    onShowImport,
-    onShowExport,
     onShowPreferences,
   }: Props = $props();
 
@@ -47,7 +44,7 @@
     siteOrder.map((id) => ({
       id,
       label: scopes[id].label,
-      display: siteDisplay(id),
+      badge: siteBadge(id),
       active: view === "edit" && selectedScope === id,
     })),
   );
@@ -61,7 +58,16 @@
   <div class="brand">
     <div class="mark">pn</div>
     <div class="name">page-navigator</div>
-    <span class="state">on</span>
+    <button
+      type="button"
+      class="prefs"
+      class:active={view === "preferences"}
+      title="Preferences"
+      aria-label="Preferences"
+      onclick={onShowPreferences}
+    >
+      <Settings size={14} />
+    </button>
   </div>
 
   <div class="group global">
@@ -71,7 +77,7 @@
       class:active={globalIsActive}
       onclick={() => onSelectScope("global")}
     >
-      <span class="icon"><Icon name="globe" /></span>
+      <span class="icon"><Globe size={14} /></span>
       <span class="label">Global</span>
       {#if conflictCounts.global > 0}
         <span
@@ -92,28 +98,26 @@
         title="Add a site"
         onclick={onShowAddSite}
       >
-        <Icon name="plus" size={12} />
+        <Plus size={12} />
       </button>
     </div>
     {#if sites.length === 0}
       <button type="button" class="empty-sites" onclick={onShowAddSite}>
-        <Icon name="plus" size={11} />
+        <Plus size={11} />
         Add a site
       </button>
     {:else}
-      <nav
+      <SortableList
+        items={sites}
+        handle=".grip"
+        onReorder={(next) => onReorderSites(next.map((s) => s.id))}
+        tag="nav"
         class="site-list"
-        use:sortable={{
-          items: sites,
-          onReorder: (next) => onReorderSites(next.map((s) => s.id)),
-          handle: ".grip",
-        }}
       >
-        {#each sites as site (site.id)}
+        {#snippet item(site)}
           <div
             class="item site"
             class:active={site.active}
-            data-id={site.id}
             role="button"
             tabindex="0"
             onclick={() => onSelectScope(site.id)}
@@ -130,14 +134,14 @@
               onclick={(e) => e.stopPropagation()}
               role="presentation"
             >
-              <Icon name="grip" size={12} />
+              <GripVertical size={12} />
             </span>
-            {#if site.display}
-              <span class="fav" style="background: {site.display.color}"
-                >{site.display.initials}</span
-              >
+            {#if site.badge}
+              <span class="fav" style="background: {site.badge.color}">
+                {site.badge.initials}
+              </span>
             {:else}
-              <span class="icon"><Icon name="globe" size={12} /></span>
+              <span class="icon"><Globe size={12} /></span>
             {/if}
             <span class="label">{site.label}</span>
             {#if conflictCounts[site.id] > 0}
@@ -148,60 +152,32 @@
             {/if}
             <span class="count">{bindingCounts[site.id] ?? 0}</span>
           </div>
-        {/each}
-      </nav>
+        {/snippet}
+      </SortableList>
     {/if}
-  </div>
-
-  <div class="spacer"></div>
-
-  <div class="footer">
-    <button
-      type="button"
-      class="item"
-      class:active={view === "reference"}
-      onclick={onShowReference}
-    >
-      <span class="icon"><Icon name="book" /></span>
-      <span class="label">Reference</span>
-    </button>
-    <button type="button" class="item" onclick={onShowImport}>
-      <span class="icon"><Icon name="import" /></span>
-      <span class="label">Import…</span>
-    </button>
-    <button type="button" class="item" onclick={onShowExport}>
-      <span class="icon"><Icon name="export" /></span>
-      <span class="label">Export…</span>
-    </button>
-    <button
-      type="button"
-      class="item"
-      class:active={view === "preferences"}
-      onclick={onShowPreferences}
-    >
-      <span class="icon"><Icon name="gear" /></span>
-      <span class="label">Preferences</span>
-    </button>
   </div>
 </aside>
 
 <style>
+  /* Floats on the canvas with no surface fill or right border — feels like
+       a Notion-style nav rather than a chrome rail. Sticky so it stays put
+       while the bindings list scrolls. */
   .sidebar {
-    background: var(--surface);
-    border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     position: sticky;
     top: 0;
-    height: 100vh;
+    align-self: start;
+    padding: 18px 0;
+    max-height: 100vh;
+    overflow-y: auto;
   }
 
   .brand {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 18px 18px 16px;
-    border-bottom: 1px solid var(--border);
+    padding: 0 8px 10px;
   }
   .mark {
     width: 22px;
@@ -214,45 +190,52 @@
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 700;
+    flex-shrink: 0;
   }
   .name {
+    flex: 1;
+    min-width: 0;
     font-weight: 600;
     font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .state {
-    margin-left: auto;
-    font-size: 10px;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 2px 7px;
-    background: var(--ok-bg);
-    color: var(--ok);
-    border-radius: 999px;
-    font-weight: 500;
+  .prefs {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    width: 26px;
+    height: 26px;
+    border-radius: 5px;
+    color: var(--text-3);
+    display: grid;
+    place-items: center;
+    cursor: default;
+    flex-shrink: 0;
   }
-  .state::before {
-    content: "";
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--ok);
+  .prefs:hover {
+    background: var(--hover);
+    color: var(--text-1);
+  }
+  .prefs.active {
+    background: var(--subtle);
+    color: var(--text-1);
   }
 
   .group {
-    padding: 6px 10px 4px;
+    padding: 4px 4px;
     display: flex;
     flex-direction: column;
   }
   .group.global {
-    padding-top: 10px;
-    padding-bottom: 6px;
+    padding-top: 6px;
   }
   .group-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 8px 4px;
+    padding: 8px 6px 4px;
   }
   .group-title {
     font-size: 10px;
@@ -288,7 +271,7 @@
     display: flex;
     align-items: center;
     gap: 9px;
-    padding: 6px 9px;
+    padding: 6px 8px;
     border-radius: var(--r-md);
     cursor: default;
     position: relative;
@@ -303,7 +286,7 @@
   .item.active::before {
     content: "";
     position: absolute;
-    left: -10px;
+    left: -8px;
     top: 6px;
     bottom: 6px;
     width: 2px;
@@ -313,9 +296,6 @@
 
   .item.site {
     padding-left: 4px;
-  }
-  .global-item {
-    padding-left: 9px;
   }
   .grip {
     width: 14px;
@@ -382,13 +362,15 @@
     background: var(--danger);
   }
 
-  .site-list {
+  /* Scoped to :global because the class hops through SortableList's element
+       and would otherwise lose its hash. The selector is unique to this app. */
+  :global(.site-list) {
     display: flex;
     flex-direction: column;
   }
   .empty-sites {
     appearance: none;
-    margin: 2px 8px;
+    margin: 2px 6px;
     padding: 6px 9px;
     border: 1px dashed var(--border-strong);
     background: transparent;
@@ -405,17 +387,5 @@
     background: var(--hover);
     color: var(--text-1);
     border-color: var(--text-3);
-  }
-
-  .spacer {
-    flex: 1;
-  }
-
-  .footer {
-    border-top: 1px solid var(--border);
-    padding: 8px 10px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
   }
 </style>

@@ -1,9 +1,10 @@
 <script lang="ts">
+  import Search from "@lucide/svelte/icons/search";
   import { tick } from "svelte";
   import type { Action, ActionId, OptionSchema } from "@/lib/action";
   import { type ScopeId, scopes } from "@/lib/scopes";
-  import { actionDisplay } from "../actionDisplay";
-  import Icon from "./Icon.svelte";
+  import { actionLabelParts } from "../lib/display";
+  import Modal from "../ui/Modal.svelte";
 
   interface Props {
     actions: Record<ActionId, Action>;
@@ -18,11 +19,10 @@
 
   let query = $state("");
   let focusIdx = $state(0);
-  let dialog: HTMLDialogElement | undefined = $state();
   let inputEl: HTMLInputElement | undefined = $state();
 
-  // `actions` is already pre-filtered upstream to global + bindingScope, so
-  // every entry here is one the runtime would accept under bindingScope.
+  // `actions` is pre-filtered upstream to global + bindingScope, so every
+  // entry here is one the runtime would accept under bindingScope.
   const compatibleActions = $derived(Object.values(actions));
 
   const filteredActions = $derived.by(() => {
@@ -45,7 +45,7 @@
     action: Action;
     idx: number;
     name: string;
-    badgeLabel: string | null;
+    scopeBadge: string | null;
   };
   const items = $derived.by<Item[]>(() => {
     // Site-specific actions float above globals because that's why the user
@@ -55,14 +55,8 @@
       .slice()
       .sort((a, b) => globalLast(a) - globalLast(b));
     return ordered.map((action, idx) => {
-      const d = actionDisplay(action);
-      return {
-        id: action.id,
-        action,
-        idx,
-        name: d.name,
-        badgeLabel: d.badgeLabel,
-      };
+      const { name, scopeBadge } = actionLabelParts(action);
+      return { id: action.id, action, idx, name, scopeBadge };
     });
   });
 
@@ -89,7 +83,6 @@
   });
 
   $effect(() => {
-    dialog?.showModal();
     tick().then(() => inputEl?.focus());
     if (currentActionId === null) return;
     const cur = items.findIndex((i) => i.id === currentActionId);
@@ -101,8 +94,8 @@
     onPick(item.id, item.action);
   }
 
-  // ArrowUp/Down/Enter for keyboard list navigation. Escape is handled
-  // natively by <dialog> via its cancel event.
+  // ArrowUp/Down/Enter for keyboard list navigation. Escape is handled by
+  // <dialog>'s native cancel event.
   function onKeydown(e: KeyboardEvent) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -121,17 +114,10 @@
   }
 </script>
 
-<dialog
-  class="modal"
-  bind:this={dialog}
-  aria-label="Pick an action"
-  onclose={onClose}
-  onkeydown={onKeydown}
-  onclick={(e) => {
-    if (e.target === dialog) dialog.close();
-  }}
->
-  <header class="head">
+<svelte:window onkeydown={onKeydown} />
+
+<Modal ariaLabel="Pick an action" width={720} {onClose}>
+  {#snippet head({ close })}
     <div class="titles">
       <h1>Pick an action</h1>
       <p class="sub">
@@ -142,20 +128,15 @@
         {/if}
       </p>
     </div>
-    <button
-      type="button"
-      class="close"
-      title="Close"
-      onclick={() => dialog?.close()}
-    >
+    <button type="button" class="close-btn" title="Close" onclick={close}>
       ×
     </button>
-  </header>
+  {/snippet}
 
-  <div class="body">
+  <div class="cols">
     <section class="left">
       <div class="search">
-        <Icon name="search" size={14} />
+        <Search size={14} />
         <input
           bind:this={inputEl}
           type="text"
@@ -181,8 +162,8 @@
               onclick={() => pick(item)}
             >
               <span class="name">{item.name}</span>
-              {#if item.badgeLabel}
-                <span class="badge site">{item.badgeLabel}</span>
+              {#if item.scopeBadge}
+                <span class="badge site">{item.scopeBadge}</span>
               {/if}
             </button>
           </li>
@@ -196,8 +177,8 @@
       {#if focused}
         <div class="detail-head">
           <h2 class="detail-name">{focused.name}</h2>
-          {#if focused.badgeLabel}
-            <span class="badge site">Only on {focused.badgeLabel}</span>
+          {#if focused.scopeBadge}
+            <span class="badge site">Only on {focused.scopeBadge}</span>
           {/if}
         </div>
         <p class="desc">{focused.action.description}</p>
@@ -223,78 +204,19 @@
     </aside>
   </div>
 
-  <footer class="foot">
+  {#snippet foot()}
     <span class="hint"><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
     <span class="hint"><kbd>↵</kbd> select</span>
     <span class="hint"><kbd>esc</kbd> close</span>
-  </footer>
-</dialog>
+  {/snippet}
+</Modal>
 
 <style>
-  .modal {
-    margin: 12vh auto auto;
-    padding: 0;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r-xl);
-    box-shadow: var(--shadow-modal);
-    width: min(720px, calc(100vw - 32px));
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    animation: fadein 0.15s ease-out;
-  }
-  .modal::backdrop {
-    background: rgba(20, 18, 15, 0.32);
-    backdrop-filter: blur(2px);
-  }
-  @keyframes fadein {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  .head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    padding: 16px 18px;
-    border-bottom: 1px solid var(--border);
-  }
-  .titles h1 {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 2px;
-  }
-  .titles .sub {
-    font-size: 12px;
-    color: var(--text-2);
-    margin: 0;
-  }
-  .close {
-    border: 0;
-    background: transparent;
-    cursor: default;
-    font-size: 18px;
-    color: var(--text-3);
-    line-height: 1;
-    padding: 2px 6px;
-    border-radius: 5px;
-  }
-  .close:hover {
-    background: var(--hover);
-    color: var(--text-1);
-  }
-
-  .body {
+  .cols {
     display: grid;
     grid-template-columns: 1fr 280px;
     min-height: 0;
-    flex: 1;
+    height: 100%;
   }
   .left {
     display: flex;
@@ -451,18 +373,11 @@
     font-size: 12px;
   }
 
-  .foot {
-    display: flex;
-    gap: 14px;
-    padding: 8px 14px;
-    border-top: 1px solid var(--border);
-    color: var(--text-3);
-    font-size: 11px;
-    background: var(--canvas);
-  }
   .hint {
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    color: var(--text-3);
+    font-size: 11px;
   }
 </style>

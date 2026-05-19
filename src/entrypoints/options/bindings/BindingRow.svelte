@@ -1,12 +1,17 @@
 <script lang="ts">
+  import ChevronDown from "@lucide/svelte/icons/chevron-down";
+  import GripVertical from "@lucide/svelte/icons/grip-vertical";
+  import Plus from "@lucide/svelte/icons/plus";
+  import Trash2 from "@lucide/svelte/icons/trash-2";
   import type { Action, ActionId } from "@/lib/action";
   import type { Trigger } from "@/lib/keys";
   import type { ScopeId } from "@/lib/scopes";
   import type { Binding } from "@/lib/storage";
-  import { actionDisplay } from "../actionDisplay";
+  import { actionLabelParts } from "../lib/display";
+  import Button from "../ui/Button.svelte";
+  import KeyTag from "../ui/KeyTag.svelte";
+  import Toggle from "../ui/Toggle.svelte";
   import ActionPickerModal from "./ActionPickerModal.svelte";
-  import Icon from "./Icon.svelte";
-  import KeyTag from "./KeyTag.svelte";
   import OptionsForm from "./OptionsForm.svelte";
   import OptionsSummary from "./OptionsSummary.svelte";
   import TriggerCaptureModal from "./TriggerCaptureModal.svelte";
@@ -40,18 +45,20 @@
   }: Props = $props();
 
   // Each edit-mode field stands on its own so a new binding can be built
-  // incrementally — every field starts unspecified. The effect re-seeds
-  // from `binding` on every entry into edit mode, so Cancel just flips
-  // `editing` off and the in-flight values are dropped on the next entry.
+  // incrementally. The effect re-seeds from `binding` on every entry into
+  // edit mode, so Cancel just flips `editing` off and the in-flight values
+  // are dropped on the next entry.
   let triggers = $state<Trigger[]>([]);
   let actionId = $state<ActionId | null>(null);
   let options = $state<Record<string, unknown>>({});
+  let enabled = $state(true);
 
   $effect(() => {
     if (!editing) return;
     triggers = binding ? $state.snapshot(binding.triggers) : [];
     actionId = binding?.actionId ?? null;
     options = binding ? $state.snapshot(binding.options) : {};
+    enabled = binding?.enabled ?? true;
   });
 
   let pickerOpen = $state(false);
@@ -60,19 +67,21 @@
   const editAction = $derived<Action | null>(
     actionId === null ? null : (actions[actionId] ?? null),
   );
-  const editDisplay = $derived(
-    editAction === null ? null : actionDisplay(editAction),
+  const editLabel = $derived(
+    editAction === null ? null : actionLabelParts(editAction),
   );
   const viewAction = $derived<Action | null>(
     binding === null ? null : (actions[binding.actionId] ?? null),
   );
-  const viewDisplay = $derived(
-    viewAction === null ? null : actionDisplay(viewAction),
+  const viewLabel = $derived(
+    viewAction === null ? null : actionLabelParts(viewAction),
   );
 
   // Done is gated on a real action and at least one trigger — otherwise
   // the saved binding would be silently dropped by the loader.
   const canCommit = $derived(actionId !== null && triggers.length > 0);
+
+  const disabled = $derived(binding !== null && !binding.enabled);
 
   function pickAction(nextId: ActionId, next: Action) {
     pickerOpen = false;
@@ -104,17 +113,16 @@
       triggers,
       actionId,
       options,
-      enabled: binding?.enabled ?? true,
+      enabled,
     });
   }
 
+  // The row acts as a button that opens edit mode. While editing, click /
+  // keyboard activation is a no-op (focus and clicks belong to inner inputs)
+  // but role / tab-stop stay so AT keeps a stable identity.
   function onRowClick() {
     if (!editing) onStartEdit();
   }
-
-  // The row acts as a button that opens edit mode. While editing, the
-  // click handler is a no-op (focus and clicks belong to the inner inputs)
-  // but the role / tab-stop stay so AT keeps a stable identity.
   function onRowKeydown(e: KeyboardEvent) {
     if (editing) return;
     if (e.key === "Enter" || e.key === " ") {
@@ -127,8 +135,9 @@
 <div
   class="row"
   class:editing
+  class:disabled={disabled && !editing}
   class:conflict={isConflict && !editing}
-  data-id={rowId}
+  data-row-id={rowId}
   role="button"
   tabindex={editing ? -1 : 0}
   onclick={onRowClick}
@@ -152,10 +161,13 @@
           captureOpen = true;
         }}
       >
-        <Icon name="plus" size={10} />
+        <Plus size={10} />
         add key
       </button>
     {:else if binding}
+      {#if disabled}
+        <span class="off-badge">OFF</span>
+      {/if}
       {#each binding.triggers as t, i (i)}
         <KeyTag trigger={t} conflict={triggerConflicts.has(t.join(" "))} />
       {/each}
@@ -175,25 +187,25 @@
           pickerOpen = true;
         }}
       >
-        {#if editAction && editDisplay}
-          <span class="action-name">{editDisplay.name}</span>
-          {#if editDisplay.badgeLabel}
-            <span class="badge site">{editDisplay.badgeLabel}</span>
+        {#if editAction && editLabel}
+          <span class="action-name">{editLabel.name}</span>
+          {#if editLabel.scopeBadge}
+            <span class="badge site">{editLabel.scopeBadge}</span>
           {/if}
         {:else}
           <span class="muted">Pick an action…</span>
         {/if}
-        <span class="chev"><Icon name="down" size={10} /></span>
+        <span class="chev"><ChevronDown size={10} /></span>
       </button>
       {#if editAction}
         <span class="action-desc">{editAction.description}</span>
       {/if}
     {:else if binding}
       <span class="action-name">
-        {#if viewAction && viewDisplay}
-          {viewDisplay.name}
-          {#if viewDisplay.badgeLabel}
-            <span class="badge site">{viewDisplay.badgeLabel}</span>
+        {#if viewAction && viewLabel}
+          {viewLabel.name}
+          {#if viewLabel.scopeBadge}
+            <span class="badge site">{viewLabel.scopeBadge}</span>
           {/if}
         {:else}
           <span class="muted">unset</span>
@@ -236,7 +248,7 @@
         onclick={(e) => e.stopPropagation()}
         role="presentation"
       >
-        <Icon name="grip" size={14} />
+        <GripVertical size={14} />
       </span>
     {/if}
   </div>
@@ -244,32 +256,42 @@
   {#if editing}
     <div class="edit-actions">
       {#if binding !== null}
-        <button
-          type="button"
-          class="btn ghost danger"
+        <Button
+          variant="ghost-danger"
           onclick={(e) => {
             e.stopPropagation();
             onDelete();
           }}
         >
-          <Icon name="trash" size={12} />
+          <Trash2 size={12} />
           Delete
-        </button>
+        </Button>
       {/if}
+      <span class="enable">
+        <Toggle
+          pressed={enabled}
+          tone="ok"
+          ariaLabel={enabled
+            ? "Disable this binding"
+            : "Enable this binding"}
+          onChange={(next) => {
+            enabled = next;
+          }}
+        />
+        <span class="enable-label">{enabled ? "Enabled" : "Disabled"}</span>
+      </span>
       <span class="spacer"></span>
-      <button
-        type="button"
-        class="btn ghost"
+      <Button
+        variant="ghost"
         onclick={(e) => {
           e.stopPropagation();
           onCancel();
         }}
       >
         Cancel
-      </button>
-      <button
-        type="button"
-        class="btn primary"
+      </Button>
+      <Button
+        variant="primary"
         disabled={!canCommit}
         onclick={(e) => {
           e.stopPropagation();
@@ -277,7 +299,7 @@
         }}
       >
         Done
-      </button>
+      </Button>
     </div>
   {/if}
 </div>
@@ -308,24 +330,29 @@
     display: grid;
     grid-template-columns:
       minmax(140px, 200px)
-      minmax(0, 1fr)
-      minmax(170px, 1fr)
+      minmax(0, 1.4fr)
+      minmax(140px, 0.9fr)
       32px;
     gap: 14px;
     align-items: start;
-    padding: 12px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border);
     position: relative;
     background: transparent;
+    cursor: default;
   }
-  .row:hover {
+  .row:hover:not(.editing) {
     background: rgba(0, 0, 0, 0.012);
   }
+  /* Editing state: the outline replaces the border so the row "lifts"
+       without shifting its content. Inset the outline so cells stay on the
+       same column tracks as the neighbouring rows. */
   .row.editing {
     background: var(--surface);
     outline: 1px solid var(--border-strong);
-    border-radius: var(--r-md);
+    outline-offset: -1px;
     border-bottom-color: transparent;
+    border-radius: var(--r-md);
     z-index: 2;
     box-shadow:
       0 1px 0 rgba(0, 0, 0, 0.02),
@@ -341,9 +368,9 @@
     background: var(--danger);
     border-radius: 2px;
   }
-
   .cell {
     min-width: 0;
+    padding-top: 1px;
   }
 
   .trigger {
@@ -352,6 +379,19 @@
     gap: 4px;
     align-items: center;
     min-height: 24px;
+  }
+  .off-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--subtle);
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    text-transform: uppercase;
   }
   .add-key {
     display: inline-flex;
@@ -378,26 +418,29 @@
     flex-direction: column;
     gap: 2px;
   }
+  /* Picker mimics the static name's box so swapping in/out of edit mode
+       doesn't shift the action column. Negative margin lets the hover halo
+       visually surround the text without changing the layout origin. */
   .action-picker {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 2px 4px;
-    border-radius: 4px;
-    margin: -2px -4px;
-    cursor: default;
+    padding: 2px 6px;
+    margin: -2px -6px;
     border: 0;
     background: transparent;
+    border-radius: 4px;
     font: inherit;
     text-align: left;
     color: inherit;
+    cursor: default;
   }
   .action-picker:hover {
     background: var(--hover);
   }
   .action-picker .chev {
     color: var(--text-3);
-    margin-left: auto;
+    display: inline-flex;
   }
   .action-name {
     font-family: var(--font-mono);
@@ -437,7 +480,20 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    font-size: 11.5px;
+    color: var(--text-2);
   }
+
+  /* Disabled state — declared after per-cell rules so its higher specificity
+     is also later in source order (avoids descending-specificity warnings).
+     Triggers dim alongside action/options; the OFF badge stays full-strength
+     so the disabled state remains legible at a glance. */
+  .row.disabled .trigger :global(.tkey),
+  .row.disabled .action,
+  .row.disabled .options {
+    opacity: 0.55;
+  }
+
   .muted {
     color: var(--text-3);
     font-family: var(--font-mono);
@@ -476,58 +532,23 @@
   .edit-actions {
     grid-column: 1 / -1;
     display: flex;
-    gap: 8px;
-    padding-top: 8px;
-    margin-top: 4px;
+    gap: 10px;
+    padding-top: 10px;
+    margin-top: 8px;
     border-top: 1px dashed var(--border);
     align-items: center;
   }
   .spacer {
     flex: 1;
   }
-  .btn {
+  .enable {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    height: 30px;
-    padding: 0 11px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    color: var(--text-1);
-    font-size: 12.5px;
-    font-family: inherit;
-    cursor: default;
-  }
-  .btn:hover {
-    background: var(--hover);
-    border-color: var(--border-strong);
-  }
-  .btn.ghost {
-    background: transparent;
-    border-color: transparent;
-    color: var(--text-2);
-  }
-  .btn.ghost:hover {
-    background: var(--hover);
+    gap: 8px;
+    font-size: 12px;
     color: var(--text-1);
   }
-  .btn.ghost.danger {
-    color: var(--danger);
-  }
-  .btn.ghost.danger:hover {
-    background: var(--danger-bg);
-  }
-  .btn.primary {
-    background: var(--accent);
-    color: var(--accent-fg);
-    border-color: var(--accent);
-  }
-  .btn.primary:hover {
-    background: #2c2924;
-  }
-  .btn:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
+  .enable-label {
+    user-select: none;
   }
 </style>

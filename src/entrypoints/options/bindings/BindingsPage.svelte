@@ -1,13 +1,15 @@
 <script lang="ts">
+  import Globe from "@lucide/svelte/icons/globe";
+  import Plus from "@lucide/svelte/icons/plus";
+  import Search from "@lucide/svelte/icons/search";
   import type { Action, ActionId } from "@/lib/action";
   import { type ScopeId, scopes } from "@/lib/scopes";
   import type { Binding } from "@/lib/storage";
-  import { findConflicts, serializeTrigger } from "../conflicts";
-  import { siteDisplay } from "../siteDisplay";
+  import { findConflicts, serializeTrigger } from "../lib/conflicts";
+  import { siteBadge } from "../lib/display";
   import BindingsList from "./BindingsList.svelte";
   import ConflictBanner from "./ConflictBanner.svelte";
   import EmptyState from "./EmptyState.svelte";
-  import Icon from "./Icon.svelte";
 
   interface Props {
     scopeId: ScopeId;
@@ -65,8 +67,9 @@
   });
 
   const scopeLabel = $derived(scopes[scopeId].label);
-  const display = $derived(siteDisplay(scopeId));
+  const badge = $derived(siteBadge(scopeId));
   const conflictCount = $derived(conflicts.size);
+  const disabledCount = $derived(bindings.filter((b) => !b.enabled).length);
   const isEmpty = $derived(bindings.length === 0 && newRowId === null);
 
   function startAdd() {
@@ -75,6 +78,10 @@
   }
 
   function startEdit(id: string) {
+    // Moving focus to a different row while a new-row draft exists drops
+    // the draft — same effect as Cancel. Without this the phantom new row
+    // would linger below the list with whatever the user had half-typed.
+    if (newRowId !== null && id !== newRowId) newRowId = null;
     editingId = id;
   }
 
@@ -109,75 +116,78 @@
     if (!first) return;
     editingId = first.id;
     requestAnimationFrame(() => {
-      const el = document.querySelector(`[data-id="${first.id}"]`);
+      const el = document.querySelector(`[data-row-id="${first.id}"]`);
       el?.scrollIntoView({ block: "center", behavior: "smooth" });
     });
   }
 </script>
 
-<div class="view">
-  <div class="head">
-    <div class="head-icon">
-      {#if display}
-        <span class="fav" style="background: {display.color}">
-          {display.initials}
-        </span>
-      {:else}
-        <span class="globe"><Icon name="globe" size={14} /></span>
-      {/if}
-    </div>
-    <div class="head-text">
-      <h1>{scopeLabel}</h1>
-      <p>
-        {#if scopeId === "global"}
-          Active on every page. Site-specific bindings, when set, take priority
-          over Global.
-        {:else}
-          Active only on {scopeLabel} pages. Overrides Global where triggers
-          overlap.
-        {/if}
-      </p>
-    </div>
-    <div class="head-meta">
-      <span class="meta-text">
-        {bindings.length}
-        binding{bindings.length === 1 ? "" : "s"}
-        {#if conflictCount > 0}
-          ·
-          <span class="danger">
-            {conflictCount}
-            conflict{conflictCount === 1 ? "" : "s"}
-          </span>
-        {/if}
+<header class="head">
+  <div class="head-icon">
+    {#if badge}
+      <span class="fav" style="background: {badge.color}">
+        {badge.initials}
       </span>
+    {:else}
+      <span class="globe"><Globe size={16} /></span>
+    {/if}
+  </div>
+  <div class="head-text">
+    <h1>{scopeLabel}</h1>
+    <p>
+      {#if scopeId === "global"}
+        Active on every page. Site-specific bindings, when set, take priority
+        over Global.
+      {:else}
+        Active only on {scopeLabel} pages. Overrides Global where triggers
+        overlap.
+      {/if}
+    </p>
+  </div>
+  <div class="head-meta">
+    {bindings.length}
+    binding{bindings.length === 1 ? "" : "s"}
+    {#if disabledCount > 0}
+      · <span class="muted">{disabledCount} disabled</span>
+    {/if}
+    {#if conflictCount > 0}
+      ·
+      <span class="danger">
+        {conflictCount}
+        conflict{conflictCount === 1 ? "" : "s"}
+      </span>
+    {/if}
+  </div>
+</header>
+
+{#if isEmpty}
+  <EmptyState {scopeLabel} onAdd={startAdd} />
+{:else}
+  <div class="toolbar">
+    <div class="search">
+      <Search size={14} />
+      <input
+        type="text"
+        value={query}
+        placeholder="Filter by trigger or action…"
+        oninput={(e) => {
+          query = (e.currentTarget as HTMLInputElement).value;
+        }}
+      >
     </div>
+    <button type="button" class="add" onclick={startAdd}>
+      <Plus size={13} />
+      New binding
+    </button>
   </div>
 
   {#if conflictCount > 0}
-    <ConflictBanner count={conflictCount} onJump={jumpToFirstConflict} />
+    <div class="banner-wrap">
+      <ConflictBanner count={conflictCount} onJump={jumpToFirstConflict} />
+    </div>
   {/if}
 
-  {#if isEmpty}
-    <EmptyState {scopeLabel} onAdd={startAdd} />
-  {:else}
-    <div class="toolbar">
-      <div class="search">
-        <Icon name="search" size={14} />
-        <input
-          type="text"
-          value={query}
-          placeholder="Filter by trigger or action…"
-          oninput={(e) => {
-            query = (e.currentTarget as HTMLInputElement).value;
-          }}
-        >
-      </div>
-      <button type="button" class="add" onclick={startAdd}>
-        <Icon name="plus" size={13} />
-        New binding
-      </button>
-    </div>
-
+  <div class="list-card">
     <BindingsList
       bindings={filteredBindings}
       {actions}
@@ -191,29 +201,24 @@
       onDelete={deleteBinding}
       {onReorder}
     />
-  {/if}
-</div>
+  </div>
+{/if}
 
 <style>
-  .view {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
   .head {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 24px 28px 12px;
+    padding: 4px 0 18px;
   }
   .head-icon {
     flex-shrink: 0;
   }
   .fav {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    font-size: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    font-size: 13px;
     font-weight: 700;
     display: grid;
     place-items: center;
@@ -221,9 +226,9 @@
     font-family: var(--font-mono);
   }
   .globe {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
     background: var(--subtle);
     display: grid;
     place-items: center;
@@ -234,27 +239,26 @@
     min-width: 0;
   }
   .head-text h1 {
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--text-1);
     margin: 0;
   }
   .head-text p {
-    font-size: 12px;
+    font-size: 12.5px;
     color: var(--text-2);
-    margin: 2px 0 0;
+    margin: 3px 0 0;
   }
   .head-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .meta-text {
+    flex-shrink: 0;
     font-size: 11.5px;
     color: var(--text-3);
   }
-  .meta-text .danger {
+  .head-meta .muted {
+    color: var(--text-3);
+  }
+  .head-meta .danger {
     color: var(--danger);
   }
 
@@ -262,7 +266,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 28px 10px;
+    padding: 0 0 12px;
   }
   .search {
     flex: 1;
@@ -288,6 +292,7 @@
     font: inherit;
     font-size: 12.5px;
     color: var(--text-1);
+    min-width: 0;
   }
   .add {
     display: inline-flex;
@@ -306,5 +311,15 @@
   .add:hover {
     background: var(--hover);
     border-color: var(--border-strong);
+  }
+
+  .banner-wrap {
+    margin-bottom: 10px;
+  }
+  .list-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    overflow: hidden;
   }
 </style>

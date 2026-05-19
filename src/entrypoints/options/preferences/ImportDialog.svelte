@@ -1,17 +1,14 @@
 <script lang="ts">
-  import Icon from "./Icon.svelte";
+  import Download from "@lucide/svelte/icons/download";
+  import Globe from "@lucide/svelte/icons/globe";
+  import Button from "../ui/Button.svelte";
+  import Modal from "../ui/Modal.svelte";
 
   interface Props {
     onClose: () => void;
   }
 
   let { onClose }: Props = $props();
-
-  let dialog: HTMLDialogElement | undefined = $state();
-
-  $effect(() => {
-    dialog?.showModal();
-  });
 
   // UI-only stub: the dialog exercises the layout the import flow will use
   // (file picker, scope table, merge/replace toggle) but doesn't actually
@@ -38,33 +35,23 @@
   }
 </script>
 
-<dialog
-  class="modal"
-  bind:this={dialog}
-  aria-label="Import"
-  onclose={onClose}
-  onclick={(e) => {
-    if (e.target === dialog) dialog.close();
-  }}
->
-  <header class="head">
-    <div>
+<Modal ariaLabel="Import" width={640} {onClose}>
+  {#snippet head({ close })}
+    <div class="titles">
       <h1>Import settings</h1>
       <p class="sub">Pick which scopes to read from the JSON file.</p>
     </div>
-    <button type="button" class="close" onclick={() => dialog?.close()}>
-      ×
-    </button>
-  </header>
+    <button type="button" class="close-btn" onclick={close}>×</button>
+  {/snippet}
 
   <div class="body">
     <div class="dropzone">
-      <Icon name="import" size={18} />
+      <Download size={18} />
       <div class="file">
         <b>No file selected</b>
         <span>JSON exported from page-navigator</span>
       </div>
-      <button type="button" class="btn">Choose file…</button>
+      <Button>Choose file…</Button>
     </div>
 
     <div class="scopes-head">
@@ -85,7 +72,7 @@
         ></button>
         <div class="nm">
           {#if r.id === "global"}
-            <Icon name="globe" size={14} />
+            <Globe size={14} />
           {/if}
           <span>{r.name}</span>
         </div>
@@ -121,68 +108,16 @@
     </div>
   </div>
 
-  <footer class="foot">
-    <button type="button" class="btn ghost" onclick={() => dialog?.close()}>
-      Cancel
-    </button>
-    <button type="button" class="btn primary" disabled>
-      Apply ({includedCount})
-    </button>
-  </footer>
-</dialog>
+  {#snippet foot({ close })}
+    <span class="spacer"></span>
+    <Button variant="ghost" onclick={close}>Cancel</Button>
+    <Button variant="primary" disabled>Apply ({includedCount})</Button>
+  {/snippet}
+</Modal>
 
 <style>
-  .modal {
-    margin: 12vh auto auto;
-    padding: 0;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r-xl);
-    box-shadow: var(--shadow-modal);
-    width: min(640px, calc(100vw - 32px));
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .modal::backdrop {
-    background: rgba(20, 18, 15, 0.32);
-    backdrop-filter: blur(2px);
-  }
-  .head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    padding: 16px 18px;
-    border-bottom: 1px solid var(--border);
-  }
-  .head h1 {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 2px;
-  }
-  .sub {
-    font-size: 12px;
-    color: var(--text-2);
-    margin: 0;
-  }
-  .close {
-    border: 0;
-    background: transparent;
-    cursor: default;
-    font-size: 18px;
-    color: var(--text-3);
-    line-height: 1;
-    padding: 2px 6px;
-    border-radius: 5px;
-  }
-  .close:hover {
-    background: var(--hover);
-    color: var(--text-1);
-  }
   .body {
     padding: 14px 18px;
-    overflow-y: auto;
   }
   .dropzone {
     border: 1.5px dashed var(--border-strong);
@@ -313,52 +248,5 @@
   .note b {
     color: var(--text-1);
     font-weight: 500;
-  }
-  .foot {
-    padding: 12px 18px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    background: var(--canvas);
-  }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 30px;
-    padding: 0 11px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    color: var(--text-1);
-    font: inherit;
-    font-size: 12.5px;
-    cursor: default;
-  }
-  .btn:hover {
-    background: var(--hover);
-    border-color: var(--border-strong);
-  }
-  .btn.ghost {
-    background: transparent;
-    border-color: transparent;
-    color: var(--text-2);
-  }
-  .btn.ghost:hover {
-    background: var(--hover);
-    color: var(--text-1);
-  }
-  .btn.primary {
-    background: var(--accent);
-    color: var(--accent-fg);
-    border-color: var(--accent);
-  }
-  .btn.primary:hover {
-    background: #2c2924;
-  }
-  .btn:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
   }
 </style>

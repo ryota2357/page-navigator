@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Icon from "./Icon.svelte";
+  import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 
   interface Props {
     count: number;
@@ -10,7 +10,7 @@
 </script>
 
 <div class="alert" role="alert">
-  <Icon name="warn" size={14} />
+  <TriangleAlert size={14} />
   <div class="body">
     <b>{count} key conflict{count === 1 ? "" : "s"}</b>
     <span>
@@ -25,7 +25,6 @@
 
 <style>
   .alert {
-    margin: 12px 28px 0;
     display: flex;
     align-items: flex-start;
     gap: 10px;

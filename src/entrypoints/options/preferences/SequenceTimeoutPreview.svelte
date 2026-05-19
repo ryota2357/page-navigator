@@ -5,7 +5,7 @@
     isModifierKey,
     type KeyToken,
   } from "@/lib/keys";
-  import { displayKeyToken } from "../triggerFormat";
+  import { formatKeyToken } from "../lib/display";
 
   interface Props {
     timeoutMs: number;
@@ -62,8 +62,8 @@
   function onKeydown(e: KeyboardEvent) {
     if (isImeComposing(e) || isModifierKey(e)) return;
     // Let Tab move focus normally so the user can leave the box without
-    // having to click away. Everything else gets eaten so the page doesn't
-    // scroll or trigger other shortcuts while the preview is focused.
+    // clicking away. Everything else gets eaten so the page doesn't scroll
+    // or trigger other shortcuts while the preview is focused.
     if (e.key === "Tab") return;
     e.preventDefault();
     e.stopPropagation();
@@ -114,7 +114,7 @@
   {#if strokes.length > 0}
     <div class="timeline">
       {#each strokes as stroke, i (i)}
-        <span class="token">{displayKeyToken(stroke.token)}</span>
+        <span class="token">{formatKeyToken(stroke.token)}</span>
         {#if strokes[i + 1]}
           {@const gapMs = Math.round(strokes[i + 1].at - stroke.at)}
           <span class="gap" title={`${gapMs} ms`}>

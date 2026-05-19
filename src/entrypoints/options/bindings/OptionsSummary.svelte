@@ -16,17 +16,10 @@
   <span class="empty">—</span>
 {:else}
   {#each keys as key (key)}
-    {@const schema = optionSchema[key]}
     {@const value = key in values ? values[key] : defaults[key]}
     <span class="pill">
       <span class="k">{key}</span>
-      {#if schema.kind === "boolean"}
-        <span class="bool" data-on={String(value === true)}>
-          <span class="v">{value === true ? "on" : "off"}</span>
-        </span>
-      {:else}
-        <span class="v">{String(value)}</span>
-      {/if}
+      <span class="v">{String(value)}</span>
     </span>
   {/each}
 {/if}
@@ -53,22 +46,5 @@
   .v {
     color: var(--text-1);
     font-weight: 500;
-  }
-  .bool {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .bool::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-  }
-  .bool[data-on="true"]::before {
-    background: var(--ok);
-  }
-  .bool[data-on="false"]::before {
-    background: var(--text-4);
   }
 </style>

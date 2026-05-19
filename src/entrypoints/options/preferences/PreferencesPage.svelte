@@ -1,14 +1,18 @@
 <script lang="ts">
+  import Download from "@lucide/svelte/icons/download";
+  import Trash2 from "@lucide/svelte/icons/trash-2";
+  import Upload from "@lucide/svelte/icons/upload";
   import { type Settings, settingsSchema } from "@/lib/storage";
-  import Icon from "./Icon.svelte";
   import SequenceTimeoutPreview from "./SequenceTimeoutPreview.svelte";
 
   interface Props {
     settings: Settings;
     onChange: (patch: Partial<Settings>) => void;
+    onShowImport: () => void;
+    onShowExport: () => void;
   }
 
-  let { settings, onChange }: Props = $props();
+  let { settings, onChange, onShowImport, onShowExport }: Props = $props();
 
   function onTimeoutChange(raw: string) {
     const n = Number(raw);
@@ -36,9 +40,10 @@
 </script>
 
 <div class="prefs">
-  <div class="head">
+  <header class="head">
     <h1>Preferences</h1>
-  </div>
+    <p>Global runtime settings — apply across every scope.</p>
+  </header>
 
   <div class="sections">
     <section>
@@ -69,7 +74,7 @@
     </section>
 
     <section>
-      <div class="row">
+      <div class="row stack">
         <div class="label">
           <div class="title">Disabled pages</div>
           <div class="desc">
@@ -78,70 +83,97 @@
             runtime yet.)
           </div>
         </div>
+        <div class="pattern-input">
+          <input
+            type="text"
+            spellcheck="false"
+            value={draft}
+            placeholder="e.g. mail.google.com/*"
+            oninput={(e) => {
+              draft = (e.currentTarget as HTMLInputElement).value;
+            }}
+            onkeydown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addPattern();
+              }
+            }}
+          >
+          <button
+            type="button"
+            class="add-btn"
+            onclick={addPattern}
+            disabled={!trimmed || isDup}
+          >
+            Add
+          </button>
+        </div>
+        {#if disabledPages.length > 0}
+          <ul class="pattern-rows">
+            {#each disabledPages as p (p)}
+              <li class="pattern-row">
+                <code class="pattern-text">{p}</code>
+                <button
+                  type="button"
+                  class="pattern-rm"
+                  aria-label={`Remove ${p}`}
+                  onclick={() => removePattern(p)}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
       </div>
-      <div class="pattern-input">
-        <input
-          type="text"
-          spellcheck="false"
-          value={draft}
-          placeholder="e.g. mail.google.com/*"
-          oninput={(e) => {
-            draft = (e.currentTarget as HTMLInputElement).value;
-          }}
-          onkeydown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              addPattern();
-            }
-          }}
-        >
-        <button
-          type="button"
-          class="add-btn"
-          onclick={addPattern}
-          disabled={!trimmed || isDup}
-        >
-          Add
-        </button>
+    </section>
+
+    <section>
+      <div class="row stack">
+        <div class="label">
+          <div class="title">Backup</div>
+          <div class="desc">
+            Export the full binding set as JSON for backup or sharing, or import
+            a previously-exported file. Import replaces the current binding set;
+            preview the diff before confirming.
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="action-btn" onclick={onShowImport}>
+            <Download size={13} />
+            Import…
+          </button>
+          <button type="button" class="action-btn" onclick={onShowExport}>
+            <Upload size={13} />
+            Export…
+          </button>
+        </div>
       </div>
-      {#if disabledPages.length > 0}
-        <ul class="pattern-rows">
-          {#each disabledPages as p (p)}
-            <li class="pattern-row">
-              <code class="pattern-text">{p}</code>
-              <button
-                type="button"
-                class="pattern-rm"
-                aria-label={`Remove ${p}`}
-                onclick={() => removePattern(p)}
-              >
-                <Icon name="trash" size={12} />
-              </button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
     </section>
   </div>
 </div>
 
 <style>
   .prefs {
-    padding: 0 0 80px;
-    max-width: 720px;
+    display: flex;
+    flex-direction: column;
   }
   .head {
-    padding: 24px 28px 4px;
+    padding: 4px 0 14px;
   }
   .head h1 {
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--text-1);
     margin: 0;
   }
+  .head p {
+    font-size: 12.5px;
+    color: var(--text-2);
+    margin: 3px 0 0;
+  }
   .sections {
-    padding: 0 28px;
     display: flex;
     flex-direction: column;
   }
@@ -160,6 +192,10 @@
     grid-template-columns: 1fr auto;
     align-items: start;
     gap: 24px;
+  }
+  .row.stack {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
   .label {
     min-width: 0;
@@ -190,13 +226,13 @@
     flex-shrink: 0;
   }
   .num-wrap input {
-    width: 80px;
-    height: 28px;
-    padding: 0 8px;
+    width: 90px;
+    height: 30px;
+    padding: 0 10px;
     border: 1px solid var(--border-input);
     border-radius: var(--r-sm);
     font-family: var(--font-mono);
-    font-size: 12.5px;
+    font-size: 13px;
     background: var(--surface);
     color: var(--text-1);
     text-align: right;
@@ -299,5 +335,28 @@
   .pattern-rm:hover {
     background: var(--danger-bg);
     color: var(--danger);
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    color: var(--text-1);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: default;
+  }
+  .action-btn:hover {
+    background: var(--hover);
+    border-color: var(--border-strong);
   }
 </style>

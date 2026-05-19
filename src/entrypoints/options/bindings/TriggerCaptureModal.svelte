@@ -1,4 +1,8 @@
 <script lang="ts">
+  import ArrowLeft from "@lucide/svelte/icons/arrow-left";
+  import Check from "@lucide/svelte/icons/check";
+  import Disc from "@lucide/svelte/icons/disc";
+  import Keyboard from "@lucide/svelte/icons/keyboard";
   import {
     encodeKeyToken,
     isImeComposing,
@@ -6,8 +10,9 @@
     type KeyToken,
     type Trigger,
   } from "@/lib/keys";
-  import { displayKeyToken } from "../triggerFormat";
-  import Icon from "./Icon.svelte";
+  import { formatKeyToken } from "../lib/display";
+  import Button from "../ui/Button.svelte";
+  import Modal from "../ui/Modal.svelte";
 
   interface Props {
     onCancel: () => void;
@@ -18,16 +23,11 @@
 
   let sequence = $state<KeyToken[]>([]);
   let mods = $state({ ctrl: false, shift: false, alt: false, meta: false });
-  let dialog: HTMLDialogElement | undefined = $state();
-
-  $effect(() => {
-    dialog?.showModal();
-  });
 
   // Window-level capture-phase listeners so every key (including Tab, Enter,
   // Esc) reaches the modal first and gets captured as a binding token rather
   // than activating buttons, moving focus, or being handled by anything else.
-  // <dialog>'s native Esc-to-close is disabled via the cancel handler below.
+  // Native Esc-to-close is disabled via Modal's `onCancel` returning "prevent".
   $effect(() => {
     function readMods(e: KeyboardEvent) {
       mods = {
@@ -64,32 +64,25 @@
   }
 </script>
 
-<dialog
-  class="modal"
-  bind:this={dialog}
-  aria-label="Capture key"
-  onclose={onCancel}
-  oncancel={(e) => e.preventDefault()}
-  onclick={(e) => {
-    if (e.target === dialog) dialog.close();
-  }}
->
-  <header class="head">
-    <span class="dot" aria-hidden="true"></span>
-    <div class="titles">
-      <h1>Capturing keys…</h1>
-      <p class="sub">
-        <Icon name="keyboard" size={11} />
-        Press any key to append to the sequence.
-      </p>
+<Modal ariaLabel="Capture key" onClose={onCancel} onCancel={() => "prevent"}>
+  {#snippet head()}
+    <div class="head-inner">
+      <span class="dot" aria-hidden="true"></span>
+      <div class="titles">
+        <h1>Capturing keys…</h1>
+        <p class="sub">
+          <Keyboard size={11} />
+          Press any key to append to the sequence.
+        </p>
+      </div>
     </div>
-  </header>
+  {/snippet}
 
   <div class="body">
     <div class="stage">
       {#if sequence.length === 0}
         <div class="empty">
-          <span class="empty-icon"><Icon name="record" size={20} /></span>
+          <span class="empty-icon"><Disc size={20} /></span>
           <div>
             <b>Press a key</b>
             <span class="hint">
@@ -105,7 +98,7 @@
         <div class="seq">
           {#each sequence as token, i (i)}
             <span class="tok" class:flash={i === sequence.length - 1}>
-              {displayKeyToken(token)}
+              {formatKeyToken(token)}
             </span>
           {/each}
           <span class="caret" aria-hidden="true"></span>
@@ -127,62 +120,29 @@
     </div>
   </div>
 
-  <footer class="foot">
-    <button
-      type="button"
-      class="btn ghost"
-      disabled={sequence.length === 0}
-      onclick={popLast}
-    >
-      <Icon name="arrow-left" size={12} />
+  {#snippet foot()}
+    <Button variant="ghost" disabled={sequence.length === 0} onclick={popLast}>
+      <ArrowLeft size={12} />
       Undo
-    </button>
-    <button
-      type="button"
-      class="btn ghost"
-      disabled={sequence.length === 0}
-      onclick={clear}
-    >
+    </Button>
+    <Button variant="ghost" disabled={sequence.length === 0} onclick={clear}>
       Clear
-    </button>
+    </Button>
     <span class="spacer"></span>
-    <button type="button" class="btn ghost" onclick={onCancel}>Cancel</button>
-    <button
-      type="button"
-      class="btn primary"
-      disabled={sequence.length === 0}
-      onclick={commit}
-    >
-      <Icon name="check" size={12} />
+    <Button variant="ghost" onclick={onCancel}>Cancel</Button>
+    <Button variant="primary" disabled={sequence.length === 0} onclick={commit}>
+      <Check size={12} />
       Confirm
-    </button>
-  </footer>
-</dialog>
+    </Button>
+  {/snippet}
+</Modal>
 
 <style>
-  .modal {
-    margin: 16vh auto auto;
-    padding: 0;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r-xl);
-    box-shadow: var(--shadow-modal);
-    width: min(560px, calc(100vw - 32px));
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .modal::backdrop {
-    background: rgba(20, 18, 15, 0.46);
-    backdrop-filter: blur(2px);
-  }
-
-  .head {
+  .head-inner {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 18px 20px 16px;
-    border-bottom: 1px solid var(--border);
+    flex: 1;
   }
   .dot {
     width: 14px;
@@ -210,19 +170,6 @@
       transform: scale(1.4);
       opacity: 0;
     }
-  }
-  .titles h1 {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0;
-  }
-  .sub {
-    font-size: 12px;
-    color: var(--text-2);
-    margin: 2px 0 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
   }
 
   .body {
@@ -351,57 +298,5 @@
     margin-left: auto;
     font-size: 11px;
     color: var(--text-3);
-  }
-
-  .foot {
-    padding: 12px 18px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--canvas);
-  }
-  .spacer {
-    flex: 1;
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 30px;
-    padding: 0 11px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    color: var(--text-1);
-    font-size: 12.5px;
-    cursor: default;
-    font-family: inherit;
-  }
-  .btn:hover {
-    background: var(--hover);
-    border-color: var(--border-strong);
-  }
-  .btn.ghost {
-    background: transparent;
-    border-color: transparent;
-    color: var(--text-2);
-  }
-  .btn.ghost:hover {
-    background: var(--hover);
-    color: var(--text-1);
-  }
-  .btn.primary {
-    background: var(--accent);
-    color: var(--accent-fg);
-    border-color: var(--accent);
-  }
-  .btn.primary:hover {
-    background: #2c2924;
-  }
-  .btn:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
   }
 </style>

@@ -11,6 +11,9 @@ importers:
       '@core/unknownutil':
         specifier: jsr:4.4.0-pre.1
         version: '@jsr/core__unknownutil@4.4.0-pre.1'
+      '@lucide/svelte':
+        specifier: 1.16.0
+        version: 1.16.0(svelte@5.55.7)
       sortablejs:
         specifier: 1.15.7
         version: 1.15.7
@@ -345,6 +348,11 @@ packages:
 
   '@jsr/core__unknownutil@4.4.0-pre.1':
     resolution: {integrity: sha512-al13EQTUm6z9gn13y5PyADkln1ACmPC1X+j70zLLps/6rZ5i2NBWVZw8cuh+YHbxLXXRiytrbtHS3hLeXIQvzg==, tarball: https://npm.jsr.io/~/11/@jsr/core__unknownutil/4.4.0-pre.1.tgz}
+
+  '@lucide/svelte@1.16.0':
+    resolution: {integrity: sha512-AvvPJnaWxeiNkAljI5MsSEc84yHPLMaWQIAJOcbX7k9au/f9ITS7cxTTQiautDiOFKVOXiYdZ+d6mtl88J+Kbg==}
+    peerDependencies:
+      svelte: ^5
 
   '@napi-rs/wasm-runtime@1.1.4':
     resolution: {integrity: sha512-3NQNNgA1YSlJb/kMH1ildASP9HW7/7kYnRI2szWJaofaS1hWmbGI4H+d3+22aGzXXN9IJ+n+GiFVcGipJP18ow==}
@@ -2226,6 +2234,10 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   '@jsr/core__unknownutil@4.4.0-pre.1': {}
+
+  '@lucide/svelte@1.16.0(svelte@5.55.7)':
+    dependencies:
+      svelte: 5.55.7
 
   '@napi-rs/wasm-runtime@1.1.4(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:

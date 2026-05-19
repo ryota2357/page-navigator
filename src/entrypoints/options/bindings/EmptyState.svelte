@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Icon from "./Icon.svelte";
+  import Plus from "@lucide/svelte/icons/plus";
 
   interface Props {
     scopeLabel: string;
@@ -13,7 +13,7 @@
   <h1>No bindings in {scopeLabel} yet</h1>
   <p>Add your first binding to start mapping keys to actions in this scope.</p>
   <button type="button" class="add" onclick={onAdd}>
-    <Icon name="plus" size={14} />
+    <Plus size={14} />
     Add a binding
   </button>
 </div>

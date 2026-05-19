@@ -8,16 +8,15 @@
     type Settings,
     settingsItem,
   } from "@/lib/storage";
-  import AddSiteModal from "./components/AddSiteModal.svelte";
-  import BindingsView from "./components/BindingsView.svelte";
-  import ExportDialog from "./components/ExportDialog.svelte";
-  import ImportDialog from "./components/ImportDialog.svelte";
-  import PreferencesView from "./components/PreferencesView.svelte";
-  import ReferenceView from "./components/ReferenceView.svelte";
-  import Sidebar from "./components/Sidebar.svelte";
-  import { findConflicts } from "./conflicts";
+  import BindingsPage from "./bindings/BindingsPage.svelte";
+  import { findConflicts } from "./lib/conflicts";
+  import ExportDialog from "./preferences/ExportDialog.svelte";
+  import ImportDialog from "./preferences/ImportDialog.svelte";
+  import PreferencesPage from "./preferences/PreferencesPage.svelte";
+  import AddSiteModal from "./sidebar/AddSiteModal.svelte";
+  import Sidebar from "./sidebar/Sidebar.svelte";
 
-  type View = "edit" | "reference" | "preferences";
+  type View = "edit" | "preferences";
 
   let bindings = $state<Binding[]>([]);
   let settings = $state<Settings>({ sequenceTimeoutMs: 1000 });
@@ -25,8 +24,8 @@
   let view = $state<View>("edit");
   let loaded = $state(false);
 
-  // siteOrder is presentation-only; not persisted. Resets to "all
-  // configured sites in scopeIds order" whenever bindings load.
+  // siteOrder is presentation-only; not persisted. Resets to "all configured
+  // sites in scopeIds order" whenever bindings load.
   let siteOrder = $state<ScopeId[]>([]);
   let showAddSite = $state(false);
   let showImport = $state(false);
@@ -154,15 +153,6 @@
     onShowAddSite={() => {
       showAddSite = true;
     }}
-    onShowReference={() => {
-      view = "reference";
-    }}
-    onShowImport={() => {
-      showImport = true;
-    }}
-    onShowExport={() => {
-      showExport = true;
-    }}
     onShowPreferences={() => {
       view = "preferences";
     }}
@@ -171,7 +161,7 @@
   <main class="main">
     {#if loaded}
       {#if view === "edit"}
-        <BindingsView
+        <BindingsPage
           scopeId={selectedScope}
           bindings={visibleBindings}
           actions={visibleActions}
@@ -180,10 +170,17 @@
           onDelete={deleteBinding}
           onReorder={reorderBindings}
         />
-      {:else if view === "reference"}
-        <ReferenceView />
       {:else if view === "preferences"}
-        <PreferencesView {settings} onChange={updateSettings} />
+        <PreferencesPage
+          {settings}
+          onChange={updateSettings}
+          onShowImport={() => {
+            showImport = true;
+          }}
+          onShowExport={() => {
+            showExport = true;
+          }}
+        />
       {/if}
     {/if}
   </main>
@@ -216,90 +213,24 @@
 {/if}
 
 <style>
-  :global(html),
-  :global(body) {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-  }
-  :global(body) {
-    font-family:
-      YuGothic, "Yu Gothic", "ヒラギノ角ゴ ProN W3", "ＭＳ ゴシック", sans-serif;
-    font-size: 13px;
-    color: var(--text-1);
-    background: var(--canvas);
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-  }
-  :global(*) {
-    box-sizing: border-box;
-  }
-  :global(button) {
-    font: inherit;
-  }
-  :global(::selection) {
-    background: #e7d6a8;
-  }
-
-  :global(:root) {
-    --font-mono: ui-monospace, Consolas, "Liberation Mono", monospace;
-
-    --canvas: #fbfaf8;
-    --surface: #ffffff;
-    --subtle: #f4f3f0;
-    --hover: #efeeea;
-    --pressed: #e8e6e0;
-
-    --border: #e6e3dc;
-    --border-strong: #d4d0c7;
-    --border-input: #d8d4cc;
-
-    --text-1: #1a1815;
-    --text-2: #5a564e;
-    --text-3: #918b80;
-    --text-4: #b9b3a7;
-
-    --accent: #1a1815;
-    --accent-fg: #ffffff;
-
-    --warn: #b45309;
-    --warn-bg: #fef6e6;
-    --warn-bd: #f0d9a8;
-
-    --danger: #b42318;
-    --danger-bg: #fdecea;
-    --danger-bd: #f3c2bb;
-
-    --ok: #1f7a3a;
-    --ok-bg: #ecf5ee;
-
-    --site-tag: #6b21a8;
-    --site-bg: #f3ebfb;
-    --site-bd: #e1d0f3;
-
-    --r-sm: 4px;
-    --r-md: 6px;
-    --r-lg: 8px;
-    --r-xl: 12px;
-
-    --shadow-pop:
-      0 1px 0 rgba(0, 0, 0, 0.04), 0 6px 18px rgba(20, 18, 15, 0.1),
-      0 1px 3px rgba(20, 18, 15, 0.06);
-    --shadow-modal:
-      0 1px 0 rgba(0, 0, 0, 0.04), 0 24px 60px rgba(20, 18, 15, 0.18);
-
-    --side-w: 240px;
-  }
-
+  /* Sidebar + main are inset together inside a (side-w + gap + content-max)
+       band so the whole app is centered on the canvas and the main column
+       actually reaches its --content-max width. Both columns float on the
+       same background. */
   .app {
+    --side-gap: 16px;
     display: grid;
-    grid-template-columns: var(--side-w) 1fr;
+    grid-template-columns: var(--side-w) minmax(0, 1fr);
+    gap: var(--side-gap);
+    max-width: calc(var(--side-w) + var(--side-gap) + var(--content-max));
+    margin-inline: auto;
+    padding: 0 16px;
     min-height: 100vh;
   }
   .main {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    padding: 24px 0 80px;
   }
 </style>

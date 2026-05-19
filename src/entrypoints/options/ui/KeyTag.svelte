@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Trigger } from "@/lib/keys";
-  import { triggerPieces } from "../triggerFormat";
+  import { formatTrigger } from "../lib/display";
 
   interface Props {
     trigger: Trigger;
@@ -16,16 +16,11 @@
     onRemove,
   }: Props = $props();
 
-  const pieces = $derived(triggerPieces(trigger));
+  const text = $derived(formatTrigger(trigger));
 </script>
 
-<span class="tkey" class:conflict class:compound={pieces.length > 1}>
-  {#each pieces as piece, i (i)}
-    {#if i > 0}
-      <span class="plus" aria-hidden="true">·</span>
-    {/if}
-    <span class="piece">{piece}</span>
-  {/each}
+<span class="tkey" class:conflict class:removable>
+  <span class="text">{text}</span>
   {#if removable}
     <button
       type="button"
@@ -47,7 +42,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 2px 4px 2px 6px;
+    padding: 2px 6px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-bottom-width: 1.5px;
@@ -58,17 +53,16 @@
     line-height: 1;
     height: 22px;
   }
-  .tkey.compound {
-    padding: 2px 4px;
+  .tkey.removable {
+    padding-right: 4px;
   }
   .tkey.conflict {
     border-color: var(--danger-bd);
     background: var(--danger-bg);
     color: var(--danger);
   }
-  .piece + .plus {
-    color: var(--text-3);
-    margin: 0 1px;
+  .text {
+    white-space: nowrap;
   }
   .x {
     border: 0;
