@@ -2,7 +2,7 @@ import { defineAction } from "@/lib/action";
 import { sendMessage } from "@/lib/background/messaging";
 
 const wrapOptionSchema = {
-  wrap: { kind: "boolean", label: "Wrap around" },
+  wrap: { kind: "boolean" },
 } as const;
 
 export const createTabAction = defineAction("global.createTab", {
@@ -10,7 +10,6 @@ export const createTabAction = defineAction("global.createTab", {
   optionSchema: {
     position: {
       kind: "select",
-      label: "Position",
       options: ["before", "after"] as const,
     },
   },
@@ -106,7 +105,7 @@ export const moveTabToNewWindowAction = defineAction(
 );
 
 const closeRangeOptionSchema = {
-  includePinned: { kind: "boolean", label: "Include pinned tabs" },
+  includePinned: { kind: "boolean" },
 } as const;
 
 export const closeTabsBeforeAction = defineAction("global.closeTabsBefore", {

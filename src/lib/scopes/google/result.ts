@@ -113,7 +113,7 @@ function moveCursor(delta: number, wrap: boolean): void {
 }
 
 const focusOptionSchema = {
-  wrap: { kind: "boolean", label: "Wrap around" },
+  wrap: { kind: "boolean" },
 } as const;
 
 export const focusNextResultAction = defineAction("google.focusNextResult", {
@@ -135,7 +135,6 @@ export const openResultAction = defineAction("google.openResult", {
   optionSchema: {
     target: {
       kind: "select",
-      label: "Where to open",
       options: ["current", "newTabBackground", "newTabForeground"] as const,
     },
   },

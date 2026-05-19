@@ -3,11 +3,10 @@ import { defineAction } from "@/lib/action";
 const byPixelOptionSchema = {
   amount: {
     kind: "number",
-    label: "Scroll amount (px)",
     min: 1,
     max: 100000,
   },
-  smooth: { kind: "boolean", label: "Smooth scroll" },
+  smooth: { kind: "boolean" },
 } as const;
 
 export const scrollDownAction = defineAction("global.scrollDown", {
@@ -61,12 +60,11 @@ export const scrollRightAction = defineAction("global.scrollRight", {
 const byPageOptionSchema = {
   fraction: {
     kind: "number",
-    label: "Page fraction (0..1)",
     min: 0.1,
     max: 1,
     step: 0.05,
   },
-  smooth: { kind: "boolean", label: "Smooth scroll" },
+  smooth: { kind: "boolean" },
 } as const;
 
 export const scrollPageDownAction = defineAction("global.scrollPageDown", {
@@ -94,7 +92,7 @@ export const scrollPageUpAction = defineAction("global.scrollPageUp", {
 });
 
 const toEdgeOptionSchema = {
-  smooth: { kind: "boolean", label: "Smooth scroll" },
+  smooth: { kind: "boolean" },
 } as const;
 
 export const scrollToTopAction = defineAction("global.scrollToTop", {

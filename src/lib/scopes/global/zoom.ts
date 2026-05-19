@@ -6,7 +6,6 @@ export const setZoomAction = defineAction("global.setZoom", {
   optionSchema: {
     factor: {
       kind: "number",
-      label: "Zoom factor",
       min: 0.25,
       max: 5,
       step: 0.05,
@@ -19,7 +18,6 @@ export const setZoomAction = defineAction("global.setZoom", {
 const stepOptionSchema = {
   step: {
     kind: "number",
-    label: "Zoom step",
     min: 0.05,
     max: 1,
     step: 0.05,

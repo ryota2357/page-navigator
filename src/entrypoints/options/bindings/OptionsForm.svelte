@@ -37,7 +37,7 @@
 {:else}
   <div class="form">
     {#each fields as f (f.key)}
-      <div class="row" title={f.schema.label}>
+      <div class="row" title={f.key}>
         <span class="key">{f.key}</span>
         {#if f.schema.kind === "number"}
           <input
@@ -53,7 +53,7 @@
           <div class="bool">
             <Toggle
               pressed={f.value === true}
-              ariaLabel={f.schema.label}
+              ariaLabel={f.key}
               onChange={(next) => setField(f.key, next)}
             />
             <span class="bool-label">

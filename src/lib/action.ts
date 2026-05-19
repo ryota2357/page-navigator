@@ -27,10 +27,7 @@ export type Action<
 
 export type InvokeResult = { ok: true } | { ok: false; reason: string };
 
-export type OptionSchema = {
-  label: string;
-  description?: string;
-} & (
+export type OptionSchema =
   | {
       kind: "number";
       min?: number;
@@ -43,8 +40,7 @@ export type OptionSchema = {
   | {
       kind: "select";
       options: readonly string[];
-    }
-);
+    };
 
 export type OptionValue<S extends Record<string, OptionSchema>> = {
   [K in keyof S]: S[K] extends { kind: "number" }
