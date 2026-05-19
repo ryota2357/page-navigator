@@ -163,4 +163,14 @@ export function registerBackgroundMessageHandlers(): void {
     const current = await browser.tabs.getZoom(tab.id);
     await browser.tabs.setZoom(tab.id, clampZoomFactor(current + data.delta));
   });
+
+  onMessage("openUrlInNewTab", async ({ data, sender }) => {
+    const tab = getSenderTab(sender);
+    await browser.tabs.create({
+      url: data.url,
+      active: data.active,
+      windowId: tab.windowId,
+      index: tab.index + 1,
+    });
+  });
 }

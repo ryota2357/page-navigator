@@ -19,6 +19,7 @@ export interface BackgroundProtocolMap {
   }): void;
   setZoom(data: { factor: number }): void;
   adjustZoom(data: { delta: number }): void;
+  openUrlInNewTab(data: { url: string; active: boolean }): void;
 }
 
 export const { sendMessage, onMessage } =
