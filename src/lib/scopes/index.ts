@@ -2,10 +2,11 @@ import { is, type PredicateType } from "@core/unknownutil";
 import type { Action } from "../action";
 import { globalActions } from "./global";
 import { googleActions } from "./google";
+import { gscholarActions } from "./gscholar";
 
 export { activeBindings } from "./active";
 
-export const scopeIds = ["global", "google"] as const;
+export const scopeIds = ["global", "google", "gscholar"] as const;
 
 export const isScopeId = is.LiteralOneOf(scopeIds);
 
@@ -33,6 +34,13 @@ export const scopes: Record<ScopeId, Scope> = {
     label: "Google",
     urlPattern: /^https:\/\/www\.google\.com\/search/,
     actions: googleActions,
+  },
+  gscholar: {
+    label: "Google Scholar",
+    // Scholar's landing page is also its search page (results at /scholar?q=),
+    // so match the whole host across regional TLDs (scholar.google.co.jp, ...).
+    urlPattern: /^https:\/\/scholar\.google\./,
+    actions: gscholarActions,
   },
 };
 

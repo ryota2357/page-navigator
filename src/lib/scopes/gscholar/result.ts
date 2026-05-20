@@ -4,14 +4,13 @@ import {
   SearchResultNavigator,
 } from "../shared/searchResultNavigation";
 
-// Google SERP DOM is class-soup that shifts every few months. The stable shape
-// we rely on: organic-result title links are <a> elements wrapping an <h3>.
-// We probe a small set of container selectors and accept the first that yields
-// hits, so layout experiments stay reachable without an extension update.
+// Scholar result titles are `<a>` inside `.gs_rt`; [CITATION]/[BOOK] entries
+// without a link have no `<a>` there, so `.gs_rt a` selects exactly the
+// navigable results. Scholar's DOM has been far more stable than the main SERP.
 const nav = new SearchResultNavigator({
-  linkSelectors: ["#search a:has(h3)", "#rso a:has(h3)", "#main a:has(h3)"],
-  focusedClass: "pn-google-focused",
-  styleId: "pn-google-focused-style",
+  linkSelectors: [".gs_rt a"],
+  focusedClass: "pn-gscholar-focused",
+  styleId: "pn-gscholar-focused-style",
   color: { light: "#1a73e8", dark: "#8ab4f8" },
 });
 
@@ -19,28 +18,28 @@ const focusOptionSchema = {
   wrap: { kind: "boolean" },
 } as const;
 
-export const focusNextResultAction = defineAction("google.focusNextResult", {
+export const focusNextResultAction = defineAction("gscholar.focusNextResult", {
   description: "Move focus to the next search result.",
   optionSchema: focusOptionSchema,
   defaults: { wrap: false },
   run: ({ wrap }) => nav.moveCursor(+1, wrap),
 });
 
-export const focusPrevResultAction = defineAction("google.focusPrevResult", {
+export const focusPrevResultAction = defineAction("gscholar.focusPrevResult", {
   description: "Move focus to the previous search result.",
   optionSchema: focusOptionSchema,
   defaults: { wrap: false },
   run: ({ wrap }) => nav.moveCursor(-1, wrap),
 });
 
-export const openResultAction = defineAction("google.openResult", {
+export const openResultAction = defineAction("gscholar.openResult", {
   description: "Activate the currently focused search result.",
   optionSchema: openOptionSchema,
   defaults: { target: "current" },
   run: ({ target }) => nav.openResult(target),
 });
 
-export const copyResultUrlAction = defineAction("google.copyResultUrl", {
+export const copyResultUrlAction = defineAction("gscholar.copyResultUrl", {
   description: "Copy the focused search result's URL to the clipboard.",
   optionSchema: {},
   defaults: {},

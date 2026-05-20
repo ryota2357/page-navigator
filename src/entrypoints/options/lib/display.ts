@@ -8,6 +8,7 @@ type SiteBadge = { initials: string; color: string };
 // Kept here so `scopes` (runtime config) stays free of presentation concerns.
 const SITE_BADGES: Partial<Record<ScopeId, SiteBadge>> = {
   google: { initials: "G", color: "#4285F4" },
+  gscholar: { initials: "GS", color: "#4d6bc6" },
 };
 
 export function siteBadge(id: ScopeId): SiteBadge | null {
