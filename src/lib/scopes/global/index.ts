@@ -1,9 +1,11 @@
 import * as history from "./history";
+import * as noop from "./noop";
 import * as scroll from "./scroll";
 import * as tabs from "./tabs";
 import * as zoom from "./zoom";
 
 export const globalActions = [
+  noop.noopAction,
   scroll.scrollDownAction,
   scroll.scrollUpAction,
   scroll.scrollLeftAction,
