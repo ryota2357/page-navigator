@@ -2,6 +2,7 @@
   import ArrowLeft from "@lucide/svelte/icons/arrow-left";
   import Check from "@lucide/svelte/icons/check";
   import Disc from "@lucide/svelte/icons/disc";
+  import Info from "@lucide/svelte/icons/info";
   import Keyboard from "@lucide/svelte/icons/keyboard";
   import {
     encodeKeyToken,
@@ -13,6 +14,7 @@
   import { formatKeyToken } from "../lib/display";
   import Button from "../ui/Button.svelte";
   import Modal from "../ui/Modal.svelte";
+  import Toggle from "../ui/Toggle.svelte";
 
   interface Props {
     onCancel: () => void;
@@ -23,6 +25,9 @@
 
   let sequence = $state<KeyToken[]>([]);
   let mods = $state({ ctrl: false, shift: false, alt: false, meta: false });
+  // When OFF, bare Enter/Esc/Backspace drive Confirm/Cancel/Undo. When ON,
+  // they are captured as binding tokens like any other key.
+  let bindReserved = $state(false);
 
   // Window-level capture-phase listeners so every key (including Tab, Enter,
   // Esc) reaches the modal first and gets captured as a binding token rather
@@ -42,6 +47,11 @@
       e.stopPropagation();
       readMods(e);
       if (isImeComposing(e) || isModifierKey(e)) return;
+      const action = reservedAction(e);
+      if (action) {
+        action();
+        return;
+      }
       sequence = [...sequence, encodeKeyToken(e)];
     }
     window.addEventListener("keydown", onKey, true);
@@ -61,6 +71,25 @@
   function commit() {
     if (sequence.length === 0) return;
     onCommit(sequence);
+  }
+
+  function hasModifier(e: KeyboardEvent): boolean {
+    return e.ctrlKey || e.altKey || e.metaKey || e.shiftKey;
+  }
+  // A reserved key only triggers its action when bare; modified combos like
+  // <C-CR> stay capturable even with the toggle off.
+  function reservedAction(e: KeyboardEvent): (() => void) | null {
+    if (bindReserved || hasModifier(e)) return null;
+    switch (e.key) {
+      case "Enter":
+        return commit;
+      case "Escape":
+        return onCancel;
+      case "Backspace":
+        return popLast;
+      default:
+        return null;
+    }
   }
 </script>
 
@@ -117,6 +146,26 @@
         key{sequence.length === 1 ? "" : "s"}
         captured
       </span>
+    </div>
+
+    <div class="reserved" class:on={bindReserved}>
+      <Info size={13} />
+      <span class="reserved-text">
+        {#if bindReserved}
+          <b>Capturing</b>
+          ⏎ / ⎋ / ⌫ as keys — use the buttons to confirm or cancel.
+        {:else}
+          <kbd>⏎</kbd>
+          confirms · <kbd>⎋</kbd> cancels · <kbd>⌫</kbd> undoes. Toggle to bind
+          them instead.
+        {/if}
+      </span>
+      <Toggle
+        pressed={bindReserved}
+        tone="ok"
+        ariaLabel="Bind reserved keys"
+        onChange={(next) => (bindReserved = next)}
+      />
     </div>
   </div>
 
@@ -298,5 +347,45 @@
     margin-left: auto;
     font-size: 11px;
     color: var(--text-3);
+  }
+
+  .reserved {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--r-md);
+    background: var(--subtle);
+    border: 1px solid var(--border);
+    font-size: 11.5px;
+    color: var(--text-2);
+    transition:
+      background 0.14s,
+      border-color 0.14s,
+      color 0.14s;
+  }
+  .reserved.on {
+    background: var(--warn-bg);
+    border-color: var(--warn-bd);
+    color: var(--warn);
+  }
+  .reserved :global(svg) {
+    flex-shrink: 0;
+  }
+  .reserved-text {
+    flex: 1;
+  }
+  .reserved-text b {
+    font-weight: 600;
+  }
+  .reserved kbd {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 0 4px;
+    border-radius: 3px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    margin: 0 2px;
   }
 </style>
