@@ -106,6 +106,11 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    /* Flex column so a consumer can hand its content a definite height via
+       `flex: 1; min-height: 0` and own its scrolling, instead of letting the
+       whole body scroll. Plain-flow consumers are unaffected. */
+    display: flex;
+    flex-direction: column;
   }
   .modal-foot {
     padding: 12px 18px;

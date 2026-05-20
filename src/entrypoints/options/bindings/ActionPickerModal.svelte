@@ -1,6 +1,6 @@
 <script lang="ts">
   import Search from "@lucide/svelte/icons/search";
-  import { tick } from "svelte";
+  import { tick, untrack } from "svelte";
   import type { Action, ActionId, OptionSchema } from "@/lib/action";
   import { type ScopeId, scopes } from "@/lib/scopes";
   import { actionLabelParts } from "../lib/display";
@@ -18,8 +18,8 @@
     $props();
 
   let query = $state("");
-  let focusIdx = $state(0);
   let inputEl: HTMLInputElement | undefined = $state();
+  let itemEls: HTMLButtonElement[] = $state([]);
 
   // `actions` is pre-filtered upstream to global + bindingScope, so every
   // entry here is one the runtime would accept under bindingScope.
@@ -60,6 +60,17 @@
     });
   });
 
+  // Open on the action this binding currently uses, if any. Read once: later
+  // navigation owns focusIdx, so the initial list order is all we need here.
+  let focusIdx = $state(
+    untrack(() =>
+      Math.max(
+        0,
+        items.findIndex((i) => i.id === currentActionId),
+      ),
+    ),
+  );
+
   const focused = $derived<Item | undefined>(items[focusIdx]);
 
   type SchemaEntry = {
@@ -77,16 +88,20 @@
       : [],
   );
 
+  // A shrinking result set must not strand the cursor past the last row.
   $effect(() => {
-    const len = items.length;
-    if (focusIdx >= len) focusIdx = Math.max(0, len - 1);
+    if (focusIdx >= items.length) focusIdx = Math.max(0, items.length - 1);
   });
 
+  // Focus the search box once the dialog is on screen.
   $effect(() => {
     tick().then(() => inputEl?.focus());
-    if (currentActionId === null) return;
-    const cur = items.findIndex((i) => i.id === currentActionId);
-    if (cur >= 0) focusIdx = cur;
+  });
+
+  // Keep the active row in view when arrowing past the list's edges.
+  $effect(() => {
+    const el = itemEls[focusIdx];
+    tick().then(() => el?.scrollIntoView({ block: "nearest" }));
   });
 
   function pick(item: Item | undefined) {
@@ -147,12 +162,12 @@
             query = (e.currentTarget as HTMLInputElement).value;
           }}
         >
-        <kbd>esc</kbd>
       </div>
       <ol class="list" role="listbox">
         {#each items as item (item.id)}
           <li>
             <button
+              bind:this={itemEls[item.idx]}
               type="button"
               class="item"
               class:focused={item.idx === focusIdx}
@@ -212,11 +227,15 @@
 </Modal>
 
 <style>
+  /* Fill the (flex) modal body and cap the single grid row to that height, so
+     the only thing tall enough to scroll is the list inside .left — search bar
+     and detail pane stay fixed by sitting outside that scroller. */
   .cols {
     display: grid;
     grid-template-columns: 1fr 280px;
+    grid-template-rows: minmax(0, 1fr);
+    flex: 1;
     min-height: 0;
-    height: 100%;
   }
   .left {
     display: flex;
@@ -231,6 +250,7 @@
     padding: 10px 12px;
     border-bottom: 1px solid var(--border);
     color: var(--text-2);
+    flex-shrink: 0;
   }
   .search input {
     flex: 1;
@@ -257,8 +277,9 @@
     list-style: none;
     margin: 0;
     padding: 4px;
-    overflow-y: auto;
     flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
   .list li {
     list-style: none;
@@ -316,6 +337,7 @@
     font-size: 12px;
     color: var(--text-2);
     min-width: 0;
+    min-height: 0;
   }
   .detail-head {
     display: flex;
