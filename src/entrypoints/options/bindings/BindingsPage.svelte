@@ -1,7 +1,5 @@
 <script lang="ts">
-  import Globe from "@lucide/svelte/icons/globe";
-  import Plus from "@lucide/svelte/icons/plus";
-  import Search from "@lucide/svelte/icons/search";
+  import { Globe, Plus, Search } from "@lucide/svelte/icons";
   import type { Action, ActionId } from "@/lib/action";
   import { type ScopeId, scopes } from "@/lib/scopes";
   import type { Binding } from "@/lib/storage";

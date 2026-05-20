@@ -1,6 +1,5 @@
 <script lang="ts">
-  import Plus from "@lucide/svelte/icons/plus";
-  import Search from "@lucide/svelte/icons/search";
+  import { Plus, Search } from "@lucide/svelte/icons";
   import { tick } from "svelte";
   import { type ScopeId, scopeIds, scopes } from "@/lib/scopes";
   import Button from "../ui/Button.svelte";

@@ -1,9 +1,5 @@
 <script lang="ts">
-  import ArrowLeft from "@lucide/svelte/icons/arrow-left";
-  import Check from "@lucide/svelte/icons/check";
-  import Disc from "@lucide/svelte/icons/disc";
-  import Info from "@lucide/svelte/icons/info";
-  import Keyboard from "@lucide/svelte/icons/keyboard";
+  import { ArrowLeft, Check, Disc, Info, Keyboard } from "@lucide/svelte/icons";
   import {
     encodeKeyToken,
     isImeComposing,

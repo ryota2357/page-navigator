@@ -1,5 +1,5 @@
 <script lang="ts">
-  import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
+  import { TriangleAlert } from "@lucide/svelte/icons";
 
   interface Props {
     count: number;

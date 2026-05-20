@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Upload from "@lucide/svelte/icons/upload";
+  import { Upload } from "@lucide/svelte/icons";
   import Button from "../ui/Button.svelte";
   import Modal from "../ui/Modal.svelte";
 

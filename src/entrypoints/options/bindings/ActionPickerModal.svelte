@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Search from "@lucide/svelte/icons/search";
+  import { Search } from "@lucide/svelte/icons";
   import { tick, untrack } from "svelte";
   import type { Action, ActionId, OptionSchema } from "@/lib/action";
   import { type ScopeId, scopes } from "@/lib/scopes";

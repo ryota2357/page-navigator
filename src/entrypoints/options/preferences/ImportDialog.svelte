@@ -1,6 +1,5 @@
 <script lang="ts">
-  import Download from "@lucide/svelte/icons/download";
-  import Globe from "@lucide/svelte/icons/globe";
+  import { Download, Globe } from "@lucide/svelte/icons";
   import Button from "../ui/Button.svelte";
   import Modal from "../ui/Modal.svelte";
 

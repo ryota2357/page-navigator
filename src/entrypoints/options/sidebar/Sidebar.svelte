@@ -1,8 +1,5 @@
 <script lang="ts">
-  import Globe from "@lucide/svelte/icons/globe";
-  import GripVertical from "@lucide/svelte/icons/grip-vertical";
-  import Plus from "@lucide/svelte/icons/plus";
-  import Settings from "@lucide/svelte/icons/settings";
+  import { Globe, GripVertical, Plus, Settings } from "@lucide/svelte/icons";
   import { type ScopeId, scopes } from "@/lib/scopes";
   import { siteBadge } from "../lib/display";
   import SortableList from "../ui/SortableList.svelte";
