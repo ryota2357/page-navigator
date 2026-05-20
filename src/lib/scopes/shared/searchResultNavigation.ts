@@ -5,8 +5,6 @@ import { sendMessage } from "@/lib/background/messaging";
 // site supplies only its DOM coupling (link selectors) and highlight cosmetics
 // (class/style id/color) so those can drift per-site without touching the core.
 
-export type OpenTarget = "current" | "newTabBackground" | "newTabForeground";
-
 export type SearchResultNavigatorConfig = {
   // Container selectors probed in order; the first that yields any hits wins,
   // so layout experiments stay reachable without a code change.
@@ -18,17 +16,6 @@ export type SearchResultNavigatorConfig = {
   // Outline + marker color for light / dark color schemes.
   color: { light: string; dark: string };
 };
-
-// The select schema lives here because its options ARE the OpenTarget union
-// that `openResult` accepts — schema and method contract are one thing. (The
-// per-action `wrap` schema, by contrast, couples to nothing here, so each
-// scope declares its own.)
-export const openOptionSchema = {
-  target: {
-    kind: "select",
-    options: ["current", "newTabBackground", "newTabForeground"] as const,
-  },
-} as const;
 
 export class SearchResultNavigator {
   readonly #linkSelectors: readonly string[];
@@ -100,13 +87,13 @@ export class SearchResultNavigator {
     this.#setHighlight(el);
   }
 
-  openResult(target: OpenTarget): void {
+  openResult(tab: "current" | "new" | "background"): void {
     const links = this.#findResultLinks();
     if (links.length === 0) return;
     const idx = this.#currentIndex(links);
     const el = links[idx < 0 ? 0 : idx];
 
-    if (target === "current") {
+    if (tab === "current") {
       // Navigate to the raw href directly when present; falls back to click()
       // for anchors without an href (and bypasses any onclick redirect the
       // site wires onto result links for tracking).
@@ -120,7 +107,7 @@ export class SearchResultNavigator {
     if (!el.href) return;
     sendMessage("openUrlInNewTab", {
       url: el.href,
-      active: target === "newTabForeground",
+      active: tab === "new",
     });
   }
 

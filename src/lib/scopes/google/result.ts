@@ -1,8 +1,5 @@
 import { defineAction } from "@/lib/action";
-import {
-  openOptionSchema,
-  SearchResultNavigator,
-} from "../shared/searchResultNavigation";
+import { SearchResultNavigator } from "../shared/searchResultNavigation";
 
 // Google SERP DOM is class-soup that shifts every few months. The stable shape
 // we rely on: organic-result title links are <a> elements wrapping an <h3>.
@@ -35,9 +32,14 @@ export const focusPrevResultAction = defineAction("google.focusPrevResult", {
 
 export const openResultAction = defineAction("google.openResult", {
   description: "Activate the currently focused search result.",
-  optionSchema: openOptionSchema,
-  defaults: { target: "current" },
-  run: ({ target }) => nav.openResult(target),
+  optionSchema: {
+    tab: {
+      kind: "select",
+      options: ["current", "new", "background"] as const,
+    },
+  },
+  defaults: { tab: "current" },
+  run: ({ tab }) => nav.openResult(tab),
 });
 
 export const copyResultUrlAction = defineAction("google.copyResultUrl", {

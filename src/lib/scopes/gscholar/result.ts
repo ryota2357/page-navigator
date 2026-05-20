@@ -1,8 +1,5 @@
 import { defineAction } from "@/lib/action";
-import {
-  openOptionSchema,
-  SearchResultNavigator,
-} from "../shared/searchResultNavigation";
+import { SearchResultNavigator } from "../shared/searchResultNavigation";
 
 // Scholar result titles are `<a>` inside `.gs_rt`; [CITATION]/[BOOK] entries
 // without a link have no `<a>` there, so `.gs_rt a` selects exactly the
@@ -34,9 +31,14 @@ export const focusPrevResultAction = defineAction("gscholar.focusPrevResult", {
 
 export const openResultAction = defineAction("gscholar.openResult", {
   description: "Activate the currently focused search result.",
-  optionSchema: openOptionSchema,
-  defaults: { target: "current" },
-  run: ({ target }) => nav.openResult(target),
+  optionSchema: {
+    tab: {
+      kind: "select",
+      options: ["current", "new", "background"] as const,
+    },
+  },
+  defaults: { tab: "current" },
+  run: ({ tab }) => nav.openResult(tab),
 });
 
 export const copyResultUrlAction = defineAction("gscholar.copyResultUrl", {
