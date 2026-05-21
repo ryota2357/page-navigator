@@ -3,7 +3,7 @@ import { defineAction } from "@/lib/action";
 // `form[role=search]` is the only selector that survived Google's 2020
 // search-box migration across regular and image sub-tabs; the bare `[name=q]`
 // variants stay as fallbacks for experimental layouts.
-const SEARCH_INPUT_SELECTORS = [
+export const SEARCH_INPUT_SELECTORS = [
   'form[role="search"] [name="q"]',
   'input[name="q"]',
   'textarea[name="q"]',

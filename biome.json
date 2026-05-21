@@ -12,7 +12,8 @@
       "!**/pnpm-lock.yaml",
       "!.output",
       "!.wxt",
-      "!.claude/settings.local.json"
+      "!.claude/settings.local.json",
+      "!**/__fixtures__"
     ]
   },
   "formatter": {

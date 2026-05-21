@@ -4,8 +4,10 @@ import { SearchResultNavigator } from "../shared/searchResultNavigation";
 // Scholar result titles are `<a>` inside `.gs_rt`; [CITATION]/[BOOK] entries
 // without a link have no `<a>` there, so `.gs_rt a` selects exactly the
 // navigable results. Scholar's DOM has been far more stable than the main SERP.
+export const RESULT_LINK_SELECTORS = [".gs_rt a"];
+
 const nav = new SearchResultNavigator({
-  linkSelectors: [".gs_rt a"],
+  linkSelectors: RESULT_LINK_SELECTORS,
   focusedClass: "pn-gscholar-focused",
   styleId: "pn-gscholar-focused-style",
   color: { light: "#1a73e8", dark: "#8ab4f8" },
