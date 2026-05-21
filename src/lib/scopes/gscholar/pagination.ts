@@ -4,6 +4,9 @@ import { defineAction } from "@/lib/action";
 // (`.gs_ico_nav_previous` / `.gs_ico_nav_next`) wrapped in the clickable `<a>`;
 // the icon itself isn't the link, so we click its parent. Either arrow is
 // absent at the list ends, making the action a no-op there.
+export const PREV_PAGE_ICON_SELECTOR = ".gs_ico_nav_previous";
+export const NEXT_PAGE_ICON_SELECTOR = ".gs_ico_nav_next";
+
 function clickPagerArrow(iconSelector: string): void {
   const icon = document.querySelector(iconSelector);
   const anchor = icon?.parentElement;
@@ -16,7 +19,7 @@ export const navigatePreviousPageAction = defineAction(
     description: "Navigate to the previous page of search results.",
     optionSchema: {},
     defaults: {},
-    run: () => clickPagerArrow(".gs_ico_nav_previous"),
+    run: () => clickPagerArrow(PREV_PAGE_ICON_SELECTOR),
   },
 );
 
@@ -26,6 +29,6 @@ export const navigateNextPageAction = defineAction(
     description: "Navigate to the next page of search results.",
     optionSchema: {},
     defaults: {},
-    run: () => clickPagerArrow(".gs_ico_nav_next"),
+    run: () => clickPagerArrow(NEXT_PAGE_ICON_SELECTOR),
   },
 );

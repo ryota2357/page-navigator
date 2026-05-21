@@ -2,7 +2,7 @@ import { defineAction } from "@/lib/action";
 
 // Scholar's search box has a stable id; no fallbacks needed (unlike the main
 // Google SERP, whose search box selector churns across experiments).
-const SEARCH_INPUT_SELECTOR = "#gs_hdr_tsi";
+export const SEARCH_INPUT_SELECTOR = "#gs_hdr_tsi";
 
 export const focusSearchInputAction = defineAction(
   "gscholar.focusSearchInput",

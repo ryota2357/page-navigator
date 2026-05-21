@@ -4,7 +4,7 @@ import { defineAction } from "@/lib/action";
 // the inline tab bar near the search box, or the overflow "more" menu. Google
 // has also been migrating `tbm=` query params to `udm=`, so each tab keeps
 // fallbacks across both schemes. First match wins.
-const SUB_TAB_SELECTORS = {
+export const SUB_TAB_SELECTORS = {
   search: [
     // "All" tab — a /search link with neither a tab-mode param nor a domain
     // hop. The `:not(...)` filters exclude image/video/maps variants.

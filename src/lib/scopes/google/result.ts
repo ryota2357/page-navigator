@@ -5,8 +5,14 @@ import { SearchResultNavigator } from "../shared/searchResultNavigation";
 // we rely on: organic-result title links are <a> elements wrapping an <h3>.
 // We probe a small set of container selectors and accept the first that yields
 // hits, so layout experiments stay reachable without an extension update.
+export const RESULT_LINK_SELECTORS = [
+  "#search a:has(h3)",
+  "#rso a:has(h3)",
+  "#main a:has(h3)",
+];
+
 const nav = new SearchResultNavigator({
-  linkSelectors: ["#search a:has(h3)", "#rso a:has(h3)", "#main a:has(h3)"],
+  linkSelectors: RESULT_LINK_SELECTORS,
   focusedClass: "pn-google-focused",
   styleId: "pn-google-focused-style",
   color: { light: "#1a73e8", dark: "#8ab4f8" },
