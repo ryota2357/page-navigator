@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { sendMessage } from "@/lib/background/messaging";
+import { setResultLinks, stubClipboardWriteText } from "@/lib/test/dom";
+import { sendMessageMock } from "@/lib/test/messaging";
 import {
   SearchResultNavigator,
   type SearchResultNavigatorConfig,
@@ -8,7 +9,6 @@ import {
 // The new/background-tab path delegates to the background script; we only
 // assert the message contract, never a real tab open.
 vi.mock("@/lib/background/messaging", () => ({ sendMessage: vi.fn() }));
-const sendMessageMock = vi.mocked(sendMessage);
 
 const baseConfig: SearchResultNavigatorConfig = {
   linkSelectors: ["#results a"],
@@ -23,22 +23,11 @@ function newNavigator(
   return new SearchResultNavigator({ ...baseConfig, ...overrides });
 }
 
-// Build a result list under `#results`; a null entry yields an <a> with no
-// href (the [CITATION]-style links the strict paths must skip).
 function setResults(
   hrefs: ReadonlyArray<string | null>,
   containerId = "results",
 ): HTMLAnchorElement[] {
-  const container = document.createElement("div");
-  container.id = containerId;
-  for (const href of hrefs) {
-    const a = document.createElement("a");
-    a.textContent = "result";
-    if (href !== null) a.setAttribute("href", href);
-    container.appendChild(a);
-  }
-  document.body.appendChild(container);
-  return Array.from(container.querySelectorAll("a"));
+  return setResultLinks(hrefs, { containerId });
 }
 
 beforeEach(() => {
@@ -213,9 +202,7 @@ describe("SearchResultNavigator openResult in a new/background tab", () => {
 describe("SearchResultNavigator copyResultUrl strictness", () => {
   it("does not copy when no result is focused", async () => {
     setResults(["https://e/1"]);
-    const writeText = vi
-      .spyOn(navigator.clipboard, "writeText")
-      .mockResolvedValue();
+    const writeText = stubClipboardWriteText();
     const nav = newNavigator();
 
     await nav.copyResultUrl();
@@ -225,9 +212,7 @@ describe("SearchResultNavigator copyResultUrl strictness", () => {
 
   it("copies the focused result's href", async () => {
     setResults(["https://e/1", "https://e/2"]);
-    const writeText = vi
-      .spyOn(navigator.clipboard, "writeText")
-      .mockResolvedValue();
+    const writeText = stubClipboardWriteText();
     const nav = newNavigator();
     nav.moveCursor(-1, false); // focus the last result
 
