@@ -16,7 +16,7 @@ export const SUB_TAB_SELECTORS = {
   news: ['a[href*="tbm=nws"]', 'a[href*="udm=12"]'],
   shopping: ['a[href*="tbm=shop"]', 'a[href*="udm=28"]'],
   books: ['a[href*="tbm=bks"]', 'a[href*="udm=36"]'],
-  flights: ['a[href*="tbm=flm"]'],
+  flights: ['a[href*="/travel/flights"]'],
   financial: ['a[href*="/finance?"]', 'a[href*="/finance/"]'],
 } as const;
 
