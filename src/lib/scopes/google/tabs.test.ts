@@ -1,15 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  navigateBooksTabAction,
-  navigateFinancialTabAction,
-  navigateFlightsTabAction,
-  navigateImagesTabAction,
-  navigateMapsTabAction,
-  navigateNewsTabAction,
-  navigateSearchTabAction,
-  navigateShoppingTabAction,
-  navigateVideosTabAction,
-} from "./tabs";
+import { navigateImagesTabAction, navigateSearchTabAction } from "./tabs";
 
 beforeEach(() => {
   document.body.innerHTML = "";
@@ -23,67 +13,40 @@ function spyOnLinkClick(href: string) {
   return vi.spyOn(link, "click").mockImplementation(() => {});
 }
 
-describe("google sub-tab navigation clicks the matching anchor", () => {
-  it.each([
-    {
-      name: "search (All)",
-      action: navigateSearchTabAction,
-      href: "https://www.google.com/search?q=test",
-    },
-    {
-      name: "images (tbm)",
-      action: navigateImagesTabAction,
-      href: "https://www.google.com/search?q=test&tbm=isch",
-    },
-    {
-      name: "videos",
-      action: navigateVideosTabAction,
-      href: "https://www.google.com/search?q=test&tbm=vid",
-    },
-    {
-      name: "maps",
-      action: navigateMapsTabAction,
-      href: "https://maps.google.com/maps?q=test",
-    },
-    {
-      name: "news",
-      action: navigateNewsTabAction,
-      href: "https://www.google.com/search?q=test&tbm=nws",
-    },
-    {
-      name: "shopping",
-      action: navigateShoppingTabAction,
-      href: "https://www.google.com/search?q=test&tbm=shop",
-    },
-    {
-      name: "books",
-      action: navigateBooksTabAction,
-      href: "https://www.google.com/search?q=test&tbm=bks",
-    },
-    {
-      name: "flights",
-      action: navigateFlightsTabAction,
-      href: "https://www.google.com/search?q=test&tbm=flm",
-    },
-    {
-      name: "financial",
-      action: navigateFinancialTabAction,
-      href: "https://www.google.com/finance?q=AAPL",
-    },
-  ])("$name", ({ action, href }) => {
-    const click = spyOnLinkClick(href);
-    action.invoke({});
+// All nine sub-tab actions are built by one factory (defineSubTabAction) and
+// differ only in their selector list, so we don't test each tab. Instead we
+// cover the factory once and then the two selectors that carry real logic the
+// contract test can't verify: the All tab's :not() exclusion and the tbm=/udm=
+// fallback. Per-tab selector validity against a real SERP is the contract
+// test's job.
+describe("google sub-tab navigation", () => {
+  it("clicks the first anchor matching the tab's selector", () => {
+    const click = spyOnLinkClick(
+      "https://www.google.com/search?q=test&tbm=isch",
+    );
+    navigateImagesTabAction.invoke({});
     expect(click).toHaveBeenCalledTimes(1);
   });
-});
 
-describe("google sub-tab fallbacks and filters", () => {
+  // tbm= is Google's legacy tab param, migrating to udm=; each tab lists both
+  // and the factory falls through to udm when tbm is absent. This is a
+  // Google-side rollout, not query-dependent. The contract fixture only
+  // captures one scheme, so this is the only guard on the fallback path.
   it("falls back from the tbm= selector to the newer udm= scheme", () => {
     const click = spyOnLinkClick("https://www.google.com/search?q=test&udm=2");
     navigateImagesTabAction.invoke({});
     expect(click).toHaveBeenCalledTimes(1);
   });
 
+  // The All tab selector must match a bare /search link...
+  it("matches a plain /search link for the All tab", () => {
+    const click = spyOnLinkClick("https://www.google.com/search?q=test");
+    navigateSearchTabAction.invoke({});
+    expect(click).toHaveBeenCalledTimes(1);
+  });
+
+  // ...while excluding the image/video/maps variants that are also /search
+  // links carrying a tbm= param.
   it("does not treat a tbm= image link as the All tab", () => {
     const click = spyOnLinkClick(
       "https://www.google.com/search?q=test&tbm=isch",
@@ -92,7 +55,9 @@ describe("google sub-tab fallbacks and filters", () => {
     expect(click).not.toHaveBeenCalled();
   });
 
-  it("is a no-op when no matching sub-tab anchor exists", () => {
-    expect(() => navigateImagesTabAction.invoke({})).not.toThrow();
+  // {ok:true} rather than .not.toThrow: the latter only catches synchronous
+  // throws, so it would silently pass if invoke ever became async.
+  it("returns ok without clicking when no sub-tab anchor matches", () => {
+    expect(navigateImagesTabAction.invoke({})).toEqual({ ok: true });
   });
 });
