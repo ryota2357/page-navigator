@@ -15,6 +15,7 @@ const CONTRACTS: Record<
     "search input box": SEARCH_INPUT_SELECTORS,
     "next-page pager anchor": [NEXT_PAGE_SELECTOR],
     "All sub-tab anchor": SUB_TAB_SELECTORS.search,
+    "AI Mode tab anchor": SUB_TAB_SELECTORS.aiMode,
     "Images sub-tab anchor": SUB_TAB_SELECTORS.images,
     "Videos sub-tab anchor": SUB_TAB_SELECTORS.videos,
     "Maps sub-tab anchor": SUB_TAB_SELECTORS.maps,

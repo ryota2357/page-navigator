@@ -10,6 +10,8 @@ export const SUB_TAB_SELECTORS = {
     // hop. The `:not(...)` filters exclude image/video/maps variants.
     'a[href*="/search?"]:not([href*="tbm="]):not([href*="udm="]):not([href*="maps.google."])',
   ],
+  // AI Mode is the udm=50 vertical; it has no legacy tbm= form.
+  aiMode: ['a[href*="udm=50"]'],
   images: ['a[href*="tbm=isch"]', 'a[href*="udm=2"]'],
   videos: ['a[href*="tbm=vid"]', 'a[href*="udm=7"]'],
   maps: ['a[href*="maps.google."]'],
@@ -47,6 +49,12 @@ export const navigateSearchTabAction = defineSubTabAction(
   "google.navigateSearchTab",
   "Switch to the All (Web) search tab.",
   "search",
+);
+
+export const navigateAiModeTabAction = defineSubTabAction(
+  "google.navigateAiModeTab",
+  "Switch to AI Mode.",
+  "aiMode",
 );
 
 export const navigateImagesTabAction = defineSubTabAction(

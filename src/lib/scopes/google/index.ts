@@ -12,6 +12,7 @@ export const googleActions = [
   pagination.navigatePreviousPageAction,
   pagination.navigateNextPageAction,
   tabs.navigateSearchTabAction,
+  tabs.navigateAiModeTabAction,
   tabs.navigateImagesTabAction,
   tabs.navigateVideosTabAction,
   tabs.navigateMapsTabAction,
