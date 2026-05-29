@@ -33,6 +33,10 @@ Two runtime contexts + an options UI, sharing `src/lib/`. Path alias `@/` → `s
 
 **Options UI** (`src/entrypoints/options/`) — Svelte 5 runes. Edits the same storage items the content script watches, so changes apply live. `lib/conflicts.ts` is display-only conflict detection (distinct from the dispatcher's runtime conflicts).
 
+## Testing
+
+Vitest + happy-dom, colocated `*.test.ts`. The non-obvious suite is the **selector-contract** tests (`src/lib/scopes/*/selectors.contract.test.ts`): they assert a scope's site selectors still hit real, checked-in HTML (`__fixtures__/`, refreshed by `pnpm fixtures` → `scripts/fixtures.ts`). Red = the site's markup drifted; re-capture and fix the selector.
+
 ## Conventions
 
 - Runtime shape-checking of stored/imported data uses `@core/unknownutil` (`is.*`).

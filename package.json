@@ -17,6 +17,7 @@
     "check:write": "biome check --write ./",
     "test": "vitest run",
     "test:watch": "vitest",
+    "fixtures": "node scripts/fixtures.ts",
     "postinstall": "wxt prepare"
   },
   "devDependencies": {
