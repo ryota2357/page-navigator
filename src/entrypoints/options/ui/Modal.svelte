@@ -82,7 +82,7 @@
     animation: modal-fadein 0.15s ease-out;
   }
   .modal::backdrop {
-    background: rgba(20, 18, 15, 0.32);
+    background: rgba(0, 0, 0, 0.32);
     backdrop-filter: blur(2px);
   }
   @keyframes modal-fadein {

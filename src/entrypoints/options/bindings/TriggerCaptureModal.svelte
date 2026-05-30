@@ -158,7 +158,6 @@
       </span>
       <Toggle
         pressed={bindReserved}
-        tone="ok"
         ariaLabel="Bind reserved keys"
         onChange={(next) => (bindReserved = next)}
       />
@@ -288,8 +287,10 @@
     color: var(--text-1);
   }
   .tok.flash {
-    background: #fff7d6;
-    border-color: #e7c97a;
+    /* Brief "captured" pulse; reuses the warn highlight tones so it
+       adapts with the theme (amber on light, dim amber on dark). */
+    background: var(--warn-bg);
+    border-color: var(--warn-bd);
     animation: tok-flash 0.28s ease-out;
   }
   @keyframes tok-flash {

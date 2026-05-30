@@ -62,7 +62,7 @@
     border-color: var(--accent);
   }
   .btn[data-variant="primary"]:hover {
-    background: #2c2924;
+    background: var(--accent-hover);
   }
   .btn[data-variant="ghost"] {
     background: transparent;

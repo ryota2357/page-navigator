@@ -51,6 +51,6 @@
     cursor: default;
   }
   .add:hover {
-    background: #2c2924;
+    background: var(--accent-hover);
   }
 </style>

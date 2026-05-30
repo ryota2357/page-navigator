@@ -270,7 +270,6 @@
       <span class="enable">
         <Toggle
           pressed={enabled}
-          tone="ok"
           ariaLabel={enabled
             ? "Disable this binding"
             : "Enable this binding"}
@@ -342,7 +341,7 @@
     cursor: default;
   }
   .row:hover:not(.editing) {
-    background: rgba(0, 0, 0, 0.012);
+    background: var(--row-hover);
   }
   /* Editing state: the outline replaces the border so the row "lifts"
        without shifting its content. Inset the outline so cells stay on the
@@ -354,9 +353,7 @@
     border-bottom-color: transparent;
     border-radius: var(--r-md);
     z-index: 2;
-    box-shadow:
-      0 1px 0 rgba(0, 0, 0, 0.02),
-      0 6px 18px rgba(20, 18, 15, 0.06);
+    box-shadow: var(--shadow-edit);
   }
   .row.conflict::before {
     content: "";

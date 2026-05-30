@@ -231,8 +231,8 @@
     content: "";
     width: 8px;
     height: 4px;
-    border-left: 1.5px solid #fff;
-    border-bottom: 1.5px solid #fff;
+    border-left: 1.5px solid var(--accent-fg);
+    border-bottom: 1.5px solid var(--accent-fg);
     transform: rotate(-45deg) translate(0, -1px);
   }
   .note {

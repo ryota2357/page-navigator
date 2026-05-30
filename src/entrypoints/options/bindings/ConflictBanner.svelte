@@ -57,6 +57,6 @@
     cursor: default;
   }
   .jump:hover {
-    background: rgba(180, 35, 24, 0.08);
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
   }
 </style>
