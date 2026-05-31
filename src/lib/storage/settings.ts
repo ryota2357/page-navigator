@@ -1,4 +1,5 @@
 import { is } from "@core/unknownutil";
+import { log } from "../log";
 import { defineStorageItem } from "./storage";
 
 export type Settings = {
@@ -6,7 +7,12 @@ export type Settings = {
     type: "number";
   }
     ? number
-    : never;
+    : (typeof settingsSchema)[K] extends {
+          type: "select";
+          options: readonly (infer V)[];
+        }
+      ? V
+      : never;
 };
 
 export const settingsSchema = {
@@ -16,45 +22,63 @@ export const settingsSchema = {
     max: 60_000,
     default: 1000,
   },
+  theme: {
+    type: "select",
+    options: ["auto", "light", "dark"],
+    default: "auto",
+  },
 } as const;
 
-const defalutSettings = Object.fromEntries(
-  Object.entries(settingsSchema).map(([key, { default: value }]) => [
-    key,
-    value,
-  ]),
+const defaultSettings = Object.fromEntries(
+  Object.entries(settingsSchema).map(([key, schema]) => [key, schema.default]),
 ) as Settings;
 
+function isKeyOf<T extends object>(key: PropertyKey, obj: T): key is keyof T {
+  return key in obj;
+}
+
 export const settingsItem = defineStorageItem<Settings>("local:settings", {
-  fallback: defalutSettings,
+  fallback: defaultSettings,
   version: 1,
   migrations: {},
   validate: (raw) => {
     if (!is.RecordObject(raw)) {
-      return {
-        ok: false,
-        fallback: defalutSettings,
-      };
+      log.warn("reset all settings: stored value is not a record", { raw });
+      return { ok: false, fallback: defaultSettings };
     }
     const valid: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(raw)) {
-      if (!(key in settingsSchema)) continue;
-      const schema = settingsSchema[key as keyof typeof settingsSchema];
-      if (typeof value !== schema.type) continue;
+    let changed = false;
+    for (const key of Object.keys(raw)) {
+      if (!isKeyOf(key, settingsSchema)) {
+        log.warn("dropping unknown setting", { key });
+        changed = true;
+        continue;
+      }
+      const schema = settingsSchema[key];
+      const value = raw[key];
       switch (schema.type) {
         case "number":
           if (is.Number(value) && Number.isFinite(value)) {
             if (schema.min <= value && value <= schema.max) {
               valid[key] = value;
+              break;
             }
-            continue;
           }
           valid[key] = schema.default;
+          changed = true;
+          break;
+        case "select":
+          if (is.String(value) && schema.options.some((v) => v === value)) {
+            valid[key] = value;
+            break;
+          }
+          valid[key] = schema.default;
+          changed = true;
           break;
         default:
-          schema.type satisfies never;
+          schema satisfies never;
       }
     }
-    return { ok: true };
+    return changed ? { ok: false, fallback: valid as Settings } : { ok: true };
   },
 });

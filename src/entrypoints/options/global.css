@@ -6,8 +6,9 @@
    the system theme, so the UI follows light/dark automatically —
    no JS, and no second token block that could drift out of sync.
 
-   Light/dark is system-driven for now; a manual switch is planned
-   and will pin the mode on :root rather than read the system.
+   This is the "auto" default. The settings `theme` field overrides it
+   by setting `color-scheme` inline on :root (App.svelte), pinning the
+   mode to light or dark; "auto" clears the override back to system.
    ============================================================ */
 
 :root {

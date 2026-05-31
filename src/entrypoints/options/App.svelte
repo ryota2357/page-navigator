@@ -19,7 +19,7 @@
   type View = "edit" | "preferences";
 
   let bindings = $state<Binding[]>([]);
-  let settings = $state<Settings>({ sequenceTimeoutMs: 1000 });
+  let settings = $state<Settings>({ sequenceTimeoutMs: 1000, theme: "auto" });
   let selectedScope = $state<ScopeId>("global");
   let view = $state<View>("edit");
   let loaded = $state(false);
@@ -65,6 +65,13 @@
     settingsItem.watch((v) => {
       settings = v;
     });
+  });
+
+  // Pin the colour scheme on :root, overriding global.css's `color-scheme: light
+  // dark`. "auto" restores that system-driven default; light/dark force one mode.
+  $effect(() => {
+    document.documentElement.style.colorScheme =
+      settings.theme === "auto" ? "light dark" : settings.theme;
   });
 
   // browser.storage.local.set serialises via structuredClone, which rejects

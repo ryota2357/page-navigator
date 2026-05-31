@@ -47,6 +47,31 @@
     <section>
       <div class="row">
         <div class="label">
+          <div class="title">Theme</div>
+          <div class="desc">
+            Colour scheme for this settings page. <code>Auto</code> follows your
+            system.
+          </div>
+        </div>
+        <div class="seg" role="group" aria-label="Theme">
+          {#each settingsSchema.theme.options as opt (opt)}
+            <button
+              type="button"
+              class="seg-btn"
+              class:active={settings.theme === opt}
+              aria-pressed={settings.theme === opt}
+              onclick={() => onChange({ theme: opt })}
+            >
+              {opt[0].toUpperCase() + opt.slice(1)}
+            </button>
+          {/each}
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="row">
+        <div class="label">
           <div class="title">Sequence timeout</div>
           <div class="desc">
             How long to wait for the next key in a multi-key sequence (e.g.
@@ -244,6 +269,40 @@
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--text-3);
+  }
+
+  .seg {
+    display: inline-flex;
+    flex-shrink: 0;
+    border: 1px solid var(--border-input);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .seg-btn {
+    appearance: none;
+    border: 0;
+    border-left: 1px solid var(--border-input);
+    height: 30px;
+    padding: 0 14px;
+    background: transparent;
+    font: inherit;
+    font-size: 12.5px;
+    color: var(--text-2);
+    cursor: default;
+  }
+  .seg-btn:first-child {
+    border-left: 0;
+  }
+  .seg-btn:hover {
+    background: var(--hover);
+  }
+  .seg-btn.active {
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+  .seg-btn.active:hover {
+    background: var(--accent-hover);
   }
 
   .pattern-input {
