@@ -1,0 +1,31 @@
+@import "@/lib/theme.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+/* A browser-action popup sizes to its content; pin the width to the ~300px
+   design and let the height follow the content. */
+body {
+  width: 300px;
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-1);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font: inherit;
+}
+
+::selection {
+  background: var(--selection);
+}
