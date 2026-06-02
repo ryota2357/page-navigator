@@ -8,6 +8,7 @@ import {
 export type ValidateResult<T> = { ok: true } | { ok: false; fallback: T };
 
 export interface StorageItem<T> extends Disposable {
+  defaultValue(): T;
   getValue(): Promise<T>;
   setValue(value: T): Promise<void>;
   watch(cb: (newValue: T, oldValue: T) => void): Unwatch;
@@ -51,6 +52,9 @@ export function defineStorageItem<T>(
   });
 
   return {
+    defaultValue() {
+      return structuredClone(options.fallback);
+    },
     async getValue() {
       if (cache) return cache.value;
       const raw = await wxtItem.getValue();

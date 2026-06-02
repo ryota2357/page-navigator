@@ -7,15 +7,21 @@ export type Settings = {
     type: "number";
   }
     ? number
-    : (typeof settingsSchema)[K] extends {
-          type: "select";
-          options: readonly (infer V)[];
-        }
-      ? V
-      : never;
+    : (typeof settingsSchema)[K] extends { type: "boolean" }
+      ? boolean
+      : (typeof settingsSchema)[K] extends {
+            type: "select";
+            options: readonly (infer V)[];
+          }
+        ? V
+        : never;
 };
 
 export const settingsSchema = {
+  enabled: {
+    type: "boolean",
+    default: true,
+  },
   sequenceTimeoutMs: {
     type: "number",
     min: 20,
@@ -63,6 +69,14 @@ export const settingsItem = defineStorageItem<Settings>("local:settings", {
               valid[key] = value;
               break;
             }
+          }
+          valid[key] = schema.default;
+          changed = true;
+          break;
+        case "boolean":
+          if (is.Boolean(value)) {
+            valid[key] = value;
+            break;
           }
           valid[key] = schema.default;
           changed = true;

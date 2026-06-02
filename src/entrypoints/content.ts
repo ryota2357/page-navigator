@@ -20,7 +20,7 @@ export default defineContentScript({
         .map((a) => [a.id, a]),
     );
 
-    const settings = await settingsItem.getValue();
+    let settings = await settingsItem.getValue();
     const allBindings = await bindingsItem.getValue();
     const dispatcher = new Dispatcher(settings.sequenceTimeoutMs, actionMap);
     dispatcher.rebuild(activeBindings(allBindings, activeScopes));
@@ -31,8 +31,10 @@ export default defineContentScript({
       log.debug("dispatcher rebuilt", { count: scoped.length });
     });
     settingsItem.watch((newValue) => {
+      settings = newValue;
       dispatcher.setTimeout(newValue.sequenceTimeoutMs);
-      log.debug("sequence timeout updated", {
+      log.debug("settings updated", {
+        enabled: newValue.enabled,
         sequenceTimeoutMs: newValue.sequenceTimeoutMs,
       });
     });
@@ -41,6 +43,7 @@ export default defineContentScript({
       "keydown",
       (event) => {
         if (!event.isTrusted) return;
+        if (!settings.enabled) return;
         if (isImeComposing(event) || isModifierKey(event)) return;
         if (isEditable(deepActiveElement())) return;
 

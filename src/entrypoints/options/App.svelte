@@ -18,8 +18,8 @@
 
   type View = "edit" | "preferences";
 
-  let bindings = $state<Binding[]>([]);
-  let settings = $state<Settings>({ sequenceTimeoutMs: 1000, theme: "auto" });
+  let bindings = $state<Binding[]>(bindingsItem.defaultValue());
+  let settings = $state<Settings>(settingsItem.defaultValue());
   let selectedScope = $state<ScopeId>("global");
   let view = $state<View>("edit");
   let loaded = $state(false);
