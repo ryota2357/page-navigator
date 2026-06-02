@@ -1,82 +1,4 @@
-/* ============================================================
-   Options UI theme — Material palette, sharp corners.
-
-   Each colour token carries both modes as light-dark(<light>,
-   <dark>). `color-scheme: light dark` below makes them resolve to
-   the system theme, so the UI follows light/dark automatically —
-   no JS, and no second token block that could drift out of sync.
-
-   This is the "auto" default. The settings `theme` field overrides it
-   by setting `color-scheme` inline on :root (App.svelte), pinning the
-   mode to light or dark; "auto" clears the override back to system.
-   ============================================================ */
-
-:root {
-  /* Auto-selects the mode and powers the light-dark() tokens. */
-  color-scheme: light dark;
-
-  --font-mono: ui-monospace, Consolas, "Liberation Mono", monospace;
-
-  --r-sm: 2px;
-  --r-md: 3px;
-  --r-lg: 4px;
-  --r-xl: 6px;
-
-  --side-w: 220px;
-  --content-max: 1080px;
-
-  --canvas: light-dark(#fafafa, #121212);
-  --surface: light-dark(#ffffff, #1e1e1e);
-  --subtle: light-dark(#f5f5f5, #242424);
-  --hover: light-dark(#eeeeee, #2c2c2c);
-  --pressed: light-dark(#e0e0e0, #333333);
-
-  --border: light-dark(#e0e0e0, #2a2a2a);
-  --border-strong: light-dark(#bdbdbd, #3a3a3a);
-  --border-input: light-dark(#cfcfcf, #383838);
-
-  --text-1: light-dark(#212121, #e6e6e6);
-  --text-2: light-dark(#616161, #a0a0a0);
-  --text-3: light-dark(#9e9e9e, #7a7a7a);
-  --text-4: light-dark(#bdbdbd, #5a5a5a);
-
-  /* Dark accent is Material's 200 swatch over dark text, not a
-     dimmed 500 — per Material's dark-theme guidance. */
-  --accent: light-dark(#3f51b5, #9fa8da);
-  --accent-fg: light-dark(#ffffff, #1a1a1a);
-  --accent-hover: light-dark(#303f9f, #b3bbe5);
-
-  --warn: light-dark(#ef6c00, #ffb74d);
-  --warn-bg: light-dark(#fff3e0, #2a2113);
-  --warn-bd: light-dark(#ffcc80, #574627);
-
-  --danger: light-dark(#d32f2f, #e57373);
-  --danger-bg: light-dark(#ffebee, #2a1a1b);
-  --danger-bd: light-dark(#ef9a9a, #5a3236);
-
-  --ok: light-dark(#388e3c, #81c784);
-  --ok-bg: light-dark(#e8f5e9, #16261a);
-
-  --site-tag: light-dark(#7b1fa2, #ce93d8);
-  --site-bg: light-dark(#f3e5f5, #281f2b);
-  --site-bd: light-dark(#e1bee7, #4a3550);
-
-  --selection: light-dark(#c5cae9, #2f3550);
-  --row-hover: light-dark(rgba(63, 81, 181, 0.04), rgba(255, 255, 255, 0.04));
-  --toggle-knob: light-dark(#ffffff, #e6e6e6);
-
-  /* Geometry is shared; light-dark() only swaps the shadow ink,
-     which has to deepen sharply to read on dark surfaces. */
-  --shadow-pop:
-    0 2px 2px light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4)),
-    0 4px 12px light-dark(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.55));
-  --shadow-modal:
-    0 11px 15px light-dark(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.55)),
-    0 24px 38px light-dark(rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.5));
-  --shadow-edit:
-    0 1px 3px light-dark(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.5)),
-    0 1px 2px light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4));
-}
+@import "@/lib/theme.css";
 
 html,
 body {
@@ -86,8 +8,7 @@ body {
 }
 
 body {
-  font-family:
-    YuGothic, "Yu Gothic", "ヒラギノ角ゴ ProN W3", "ＭＳ ゴシック", sans-serif;
+  font-family: var(--font);
   font-size: 13px;
   color: var(--text-1);
   background: var(--canvas);
