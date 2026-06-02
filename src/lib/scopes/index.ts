@@ -34,7 +34,7 @@ export const scopes: Record<ScopeId, Scope> = {
     actions: globalActions,
   },
   google: {
-    label: "Google",
+    label: "Google Search",
     urlPattern: {
       hostname: /^www\.google\.com$/,
       pathname: /^\/search$/,
@@ -42,7 +42,7 @@ export const scopes: Record<ScopeId, Scope> = {
     actions: googleActions,
   },
   gscholar: {
-    label: "Google Scholar",
+    label: "Google Scholar Search",
     urlPattern: {
       hostname: /^scholar\.google\.(com|[a-z]{2}|co\.[a-z]{2}|com\.[a-z]{2})$/,
       pathname: /^\/scholar$/,
