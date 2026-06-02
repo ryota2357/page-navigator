@@ -14,7 +14,10 @@ export type ScopeId = PredicateType<typeof isScopeId>;
 
 export type Scope = {
   label: string;
-  urlPattern: RegExp | null;
+  urlPattern: null | {
+    hostname: RegExp;
+    pathname: RegExp;
+  };
   // NOTE: typed as eager array today. When WXT supports content-script
   // code-splitting (issue wxt-dev/wxt#357, slated for v1.1) this becomes
   // `loadActions: () => Promise<readonly Action[]>` and the two entry points
@@ -27,30 +30,40 @@ export type Scope = {
 export const scopes: Record<ScopeId, Scope> = {
   global: {
     label: "Global",
-    urlPattern: null,
+    urlPattern: null, // all URLs match
     actions: globalActions,
   },
   google: {
     label: "Google",
-    urlPattern: /^https:\/\/www\.google\.com\/search/,
+    urlPattern: {
+      hostname: /^www\.google\.com$/,
+      pathname: /^\/search$/,
+    },
     actions: googleActions,
   },
   gscholar: {
     label: "Google Scholar",
-    // Scholar's landing page is also its search page (results at /scholar?q=),
-    // so match the whole host across regional TLDs (scholar.google.co.jp, ...).
-    urlPattern: /^https:\/\/scholar\.google\./,
+    urlPattern: {
+      hostname: /^scholar\.google\.(com|[a-z]{2}|co\.[a-z]{2}|com\.[a-z]{2})$/,
+      pathname: /^\/scholar$/,
+    },
     actions: gscholarActions,
   },
 };
 
-// `null` urlPattern means "always active" — that's how global lives here as
-// a peer of site scopes instead of a special case at every call site.
-export function resolveActiveScopes(url: string): Set<ScopeId> {
+export function resolveActiveScopes(loc: {
+  hostname: string;
+  pathname: string;
+}): Set<ScopeId> {
   const active = new Set<ScopeId>();
   for (const id of scopeIds) {
-    const pattern = scopes[id].urlPattern;
-    if (pattern === null || pattern.test(url)) active.add(id);
+    const p = scopes[id].urlPattern;
+    if (
+      p === null ||
+      (p.hostname.test(loc.hostname) && p.pathname.test(loc.pathname))
+    ) {
+      active.add(id);
+    }
   }
   return active;
 }

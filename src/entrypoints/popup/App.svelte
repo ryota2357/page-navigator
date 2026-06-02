@@ -44,7 +44,7 @@
       currentWindow: true,
     });
     if (!tab?.url) return;
-    const matched = [...resolveActiveScopes(tab.url)].find(
+    const matched = [...resolveActiveScopes(new URL(tab.url))].find(
       (id) => id !== "global",
     );
     if (matched) {

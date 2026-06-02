@@ -13,7 +13,7 @@ export default defineContentScript({
   async main() {
     // Fixed at init: we don't observe SPA URL changes for rescoping yet.
     // Google's SERP is a full nav per query so this holds in practice.
-    const activeScopes = resolveActiveScopes(location.href);
+    const activeScopes = resolveActiveScopes(location);
     const actionMap: Record<ActionId, Action> = Object.fromEntries(
       [...activeScopes]
         .flatMap((id) => scopes[id].actions)
