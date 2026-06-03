@@ -2,18 +2,22 @@
   import type { Snippet } from "svelte";
 
   // `close` is exposed through every snippet so internal close buttons can
-  // trigger the native <dialog> close path — which fires `onclose`, which
-  // in turn invokes the parent's `onClose`. Keeps the close logic single-
-  // sourced rather than duplicating "set showXxx = false" everywhere.
+  // trigger the native <dialog> close path — which fires `onclose`, which in
+  // turn invokes the parent's `onClose`. Keeps the close logic single-sourced
+  // rather than duplicating "set showXxx = false" everywhere.
   type Helpers = { close: () => void };
 
   interface Props {
     ariaLabel: string;
+    // Pass title/subtitle for the default header (title + × close). For a fully
+    // custom header (e.g. the capture modal's pulsing dot), pass `head` instead.
+    title?: string;
+    subtitle?: string;
     width?: number;
     closeOnBackdrop?: boolean;
     onClose: () => void;
-    // Return "prevent" to suppress Esc-to-close — used by the key-capture
-    // modal where Esc is itself a bindable key.
+    // Return "prevent" to suppress Esc-to-close — used by the key-capture modal
+    // where Esc is itself a bindable key.
     onCancel?: () => "prevent" | undefined;
     head?: Snippet<[Helpers]>;
     children: Snippet<[Helpers]>;
@@ -22,6 +26,8 @@
 
   let {
     ariaLabel,
+    title,
+    subtitle,
     width = 560,
     closeOnBackdrop = true,
     onClose,
@@ -59,6 +65,24 @@
 >
   {#if head}
     <header class="modal-head">{@render head(helpers)}</header>
+  {:else if title}
+    <header class="modal-head">
+      <div class="titles">
+        <h1>{title}</h1>
+        {#if subtitle}
+          <p class="sub">{subtitle}</p>
+        {/if}
+      </div>
+      <button
+        type="button"
+        class="close-btn"
+        title="Close"
+        aria-label="Close"
+        onclick={close}
+      >
+        ×
+      </button>
+    </header>
   {/if}
   <div class="modal-body">{@render children(helpers)}</div>
   {#if foot}
@@ -122,7 +146,9 @@
     flex-shrink: 0;
   }
 
-  /* Internal helpers consumers can reuse without re-styling. */
+  /* Header/footer helpers consumers can reuse: the default header above uses
+     them, and custom `head` snippets (e.g. the capture modal) reuse the title
+     styles so headings stay consistent. */
   :global(.modal .close-btn) {
     appearance: none;
     border: 0;

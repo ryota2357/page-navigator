@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Upload } from "@lucide/svelte/icons";
-  import Button from "../ui/Button.svelte";
-  import Modal from "../ui/Modal.svelte";
+  import Button from "@/lib/ui/Button.svelte";
+  import Modal from "@/lib/ui/Modal.svelte";
 
   interface Props {
     onClose: () => void;
@@ -10,15 +10,13 @@
   let { onClose }: Props = $props();
 </script>
 
-<Modal ariaLabel="Export" width={560} {onClose}>
-  {#snippet head({ close })}
-    <div class="titles">
-      <h1>Export settings</h1>
-      <p class="sub">Write all scopes to a single JSON file.</p>
-    </div>
-    <button type="button" class="close-btn" onclick={close}>×</button>
-  {/snippet}
-
+<Modal
+  ariaLabel="Export"
+  title="Export settings"
+  subtitle="Write all scopes to a single JSON file."
+  width={560}
+  {onClose}
+>
   <div class="body">
     <div class="dropzone">
       <Upload size={18} />

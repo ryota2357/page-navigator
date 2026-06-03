@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { resolveActiveScopes, scopes } from "@/lib/scopes";
-  import { type Settings, settingsItem } from "@/lib/storage";
+  import { reactiveStore, type Settings, settingsItem } from "@/lib/storage";
+  import { applyColorScheme, systemPrefersDark } from "@/lib/ui/theme.svelte";
   import Footer from "./Footer.svelte";
   import PowerStatus from "./PowerStatus.svelte";
   import ScopeStatus from "./ScopeStatus.svelte";
@@ -13,32 +14,27 @@
     "auto",
   ] as const satisfies Settings["theme"][];
 
-  let settings = $state<Settings | null>(null);
+  const settings = reactiveStore(settingsItem);
+  const system = systemPrefersDark();
+
   // The non-global scope matching the active tab, if any. null = Global-only.
   let site = $state<{ label: string; favIconUrl: string | undefined } | null>(
     null,
   );
-  // Tracks the OS preference so "auto" resolves to a concrete light/dark. A
-  // color-scheme pinned on :root doesn't surface through prefers-color-scheme,
-  // so the explicit modes come from settings and only "auto" reads the query.
-  let systemDark = $state(false);
 
+  // "auto" resolves to a concrete light/dark via the OS query — a color-scheme
+  // pinned on :root doesn't surface back through prefers-color-scheme, so the
+  // explicit modes come straight from settings.
   const resolvedTheme = $derived<"light" | "dark">(
-    settings == null || settings.theme === "auto"
-      ? systemDark
+    settings.value.theme === "auto"
+      ? system.dark
         ? "dark"
         : "light"
-      : settings.theme,
+      : settings.value.theme,
   );
 
   onMount(async () => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    systemDark = media.matches;
-    media.addEventListener("change", (e) => {
-      systemDark = e.matches;
-    });
-
-    settings = await settingsItem.getValue();
+    await settings.init();
     const [tab] = await browser.tabs.query({
       active: true,
       currentWindow: true,
@@ -52,21 +48,15 @@
     }
   });
 
-  // Pin color-scheme on :root from settings.theme, like the options page:
-  // "auto" restores the system default; light/dark force one mode and the
-  // light-dark() tokens re-resolve. The popup is the only writer of its own
-  // settings, so reacting to its own state is enough — no watcher needed.
+  // Pin color-scheme from settings.theme like the options page: "auto" restores
+  // the system default; light/dark force one mode and the light-dark() tokens
+  // re-resolve.
   $effect(() => {
-    if (!settings) return;
-    document.documentElement.style.colorScheme =
-      settings.theme === "auto" ? "light dark" : settings.theme;
+    applyColorScheme(settings.value.theme);
   });
 
-  async function patch(next: Partial<Settings>) {
-    if (!settings) return;
-    const merged = { ...settings, ...next };
-    await settingsItem.setValue(merged);
-    settings = merged;
+  function patch(next: Partial<Settings>) {
+    settings.set({ ...settings.value, ...next });
   }
 
   function nextTheme(current: Settings["theme"]): Settings["theme"] {
@@ -75,8 +65,8 @@
   }
 </script>
 
-{#if settings}
-  {@const s = settings}
+{#if settings.loaded}
+  {@const s = settings.value}
   <main class="popup">
     <TopBar
       theme={s.theme}

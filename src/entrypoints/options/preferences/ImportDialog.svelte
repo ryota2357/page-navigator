@@ -1,7 +1,8 @@
 <script lang="ts">
   import { Download, Globe } from "@lucide/svelte/icons";
-  import Button from "../ui/Button.svelte";
-  import Modal from "../ui/Modal.svelte";
+  import Button from "@/lib/ui/Button.svelte";
+  import Modal from "@/lib/ui/Modal.svelte";
+  import Segmented from "@/lib/ui/Segmented.svelte";
 
   interface Props {
     onClose: () => void;
@@ -9,40 +10,45 @@
 
   let { onClose }: Props = $props();
 
-  // UI-only stub: the dialog exercises the layout the import flow will use
-  // (file picker, scope table, merge/replace toggle) but doesn't actually
-  // parse a file or mutate storage yet.
+  // UI-only stub: the dialog exercises the layout the import flow will use (file
+  // picker, scope table, merge/replace toggle) but doesn't actually parse a file
+  // or mutate storage yet.
+  type Mode = "merge" | "replace";
   type ScopeRow = {
     id: string;
     name: string;
     count: number;
     include: boolean;
-    mode: "merge" | "replace";
+    mode: Mode;
   };
+
   let rows = $state<ScopeRow[]>([
     { id: "global", name: "Global", count: 0, include: true, mode: "replace" },
     { id: "google", name: "Google", count: 0, include: true, mode: "replace" },
   ]);
+
+  const modeOptions = [
+    { value: "merge", label: "Merge" },
+    { value: "replace", label: "Replace" },
+  ] as const;
 
   const includedCount = $derived(rows.filter((r) => r.include).length);
 
   function toggleInclude(id: string) {
     rows = rows.map((r) => (r.id === id ? { ...r, include: !r.include } : r));
   }
-  function setMode(id: string, mode: "merge" | "replace") {
+  function setMode(id: string, mode: Mode) {
     rows = rows.map((r) => (r.id === id ? { ...r, mode } : r));
   }
 </script>
 
-<Modal ariaLabel="Import" width={640} {onClose}>
-  {#snippet head({ close })}
-    <div class="titles">
-      <h1>Import settings</h1>
-      <p class="sub">Pick which scopes to read from the JSON file.</p>
-    </div>
-    <button type="button" class="close-btn" onclick={close}>×</button>
-  {/snippet}
-
+<Modal
+  ariaLabel="Import"
+  title="Import settings"
+  subtitle="Pick which scopes to read from the JSON file."
+  width={640}
+  {onClose}
+>
   <div class="body">
     <div class="dropzone">
       <Download size={18} />
@@ -76,24 +82,14 @@
           <span>{r.name}</span>
         </div>
         <div class="cnt">{r.count} bindings</div>
-        <div class="seg" class:disabled={!r.include}>
-          <button
-            type="button"
-            data-on={String(r.mode === "merge")}
-            onclick={() => setMode(r.id, "merge")}
-            disabled={!r.include}
-          >
-            Merge
-          </button>
-          <button
-            type="button"
-            data-on={String(r.mode === "replace")}
-            onclick={() => setMode(r.id, "replace")}
-            disabled={!r.include}
-          >
-            Replace
-          </button>
-        </div>
+        <Segmented
+          options={modeOptions}
+          value={r.mode}
+          variant="soft"
+          ariaLabel={`Import mode for ${r.name}`}
+          disabled={!r.include}
+          onChange={(mode) => setMode(r.id, mode)}
+        />
       </div>
     {/each}
 
@@ -185,31 +181,6 @@
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--text-3);
-  }
-  .seg {
-    display: flex;
-    background: var(--subtle);
-    border-radius: var(--r-sm);
-    padding: 2px;
-  }
-  .seg.disabled {
-    opacity: 0.45;
-  }
-  .seg button {
-    appearance: none;
-    border: 0;
-    background: transparent;
-    padding: 3px 9px;
-    border-radius: 3px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-2);
-    cursor: default;
-  }
-  .seg button[data-on="true"] {
-    background: var(--surface);
-    color: var(--text-1);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
   }
   .checkbox {
     appearance: none;

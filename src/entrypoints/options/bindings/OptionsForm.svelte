@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { OptionSchema } from "@/lib/action";
-  import Toggle from "../ui/Toggle.svelte";
+  import Toggle from "@/lib/ui/Toggle.svelte";
 
   interface Props {
     optionSchema: Record<string, OptionSchema>;

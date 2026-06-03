@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { Search } from "@lucide/svelte/icons";
   import { tick, untrack } from "svelte";
   import type { Action, ActionId, OptionSchema } from "@/lib/action";
   import { type ScopeId, scopes } from "@/lib/scopes";
-  import { actionLabelParts } from "../lib/display";
-  import Modal from "../ui/Modal.svelte";
+  import Kbd from "@/lib/ui/Kbd.svelte";
+  import Modal from "@/lib/ui/Modal.svelte";
+  import ScopeTag from "@/lib/ui/ScopeTag.svelte";
+  import SearchInput from "@/lib/ui/SearchInput.svelte";
+  import { actionLabelParts } from "../display";
 
   interface Props {
     actions: Record<ActionId, Action>;
@@ -18,11 +20,10 @@
     $props();
 
   let query = $state("");
-  let inputEl: HTMLInputElement | undefined = $state();
   let itemEls: HTMLButtonElement[] = $state([]);
 
-  // `actions` is pre-filtered upstream to global + bindingScope, so every
-  // entry here is one the runtime would accept under bindingScope.
+  // `actions` is pre-filtered upstream to global + bindingScope, so every entry
+  // here is one the runtime would accept under bindingScope.
   const compatibleActions = $derived(Object.values(actions));
 
   const filteredActions = $derived.by(() => {
@@ -93,11 +94,6 @@
     if (focusIdx >= items.length) focusIdx = Math.max(0, items.length - 1);
   });
 
-  // Focus the search box once the dialog is on screen.
-  $effect(() => {
-    tick().then(() => inputEl?.focus());
-  });
-
   // Keep the active row in view when arrowing past the list's edges.
   $effect(() => {
     const el = itemEls[focusIdx];
@@ -127,42 +123,35 @@
       pick(focused);
     }
   }
+
+  const subtitle = $derived(
+    bindingScope === "global"
+      ? "Global actions only"
+      : `Global + ${scopes[bindingScope].label} actions`,
+  );
 </script>
 
 <svelte:window onkeydown={onKeydown} />
 
-<Modal ariaLabel="Pick an action" width={720} {onClose}>
-  {#snippet head({ close })}
-    <div class="titles">
-      <h1>Pick an action</h1>
-      <p class="sub">
-        {#if bindingScope === "global"}
-          Global actions only
-        {:else}
-          Global + {scopes[bindingScope].label} actions
-        {/if}
-      </p>
-    </div>
-    <button type="button" class="close-btn" title="Close" onclick={close}>
-      ×
-    </button>
-  {/snippet}
-
+<Modal
+  ariaLabel="Pick an action"
+  title="Pick an action"
+  {subtitle}
+  width={720}
+  {onClose}
+>
   <div class="cols">
     <section class="left">
-      <div class="search">
-        <Search size={14} />
-        <input
-          bind:this={inputEl}
-          type="text"
-          value={query}
-          placeholder="Search actions by name or description…"
-          aria-label="Search actions"
-          oninput={(e) => {
-            query = (e.currentTarget as HTMLInputElement).value;
-          }}
-        >
-      </div>
+      <SearchInput
+        value={query}
+        variant="bar"
+        focusOnMount
+        placeholder="Search actions by name or description…"
+        ariaLabel="Search actions"
+        oninput={(v) => {
+          query = v;
+        }}
+      />
       <ol class="list" role="listbox">
         {#each items as item (item.id)}
           <li>
@@ -178,7 +167,7 @@
             >
               <span class="name">{item.name}</span>
               {#if item.scopeBadge}
-                <span class="badge site">{item.scopeBadge}</span>
+                <ScopeTag>{item.scopeBadge}</ScopeTag>
               {/if}
             </button>
           </li>
@@ -193,7 +182,7 @@
         <div class="detail-head">
           <h2 class="detail-name">{focused.name}</h2>
           {#if focused.scopeBadge}
-            <span class="badge site">Only on {focused.scopeBadge}</span>
+            <ScopeTag>Only on {focused.scopeBadge}</ScopeTag>
           {/if}
         </div>
         <p class="desc">{focused.action.description}</p>
@@ -206,9 +195,9 @@
               <li>
                 <span class="opt-key">{f.key}</span>
                 <span class="opt-kind">: {f.kind}</span>
-                <span class="opt-default">
-                  = {JSON.stringify(f.defaultValue)}
-                </span>
+                <span class="opt-default"
+                  >= {JSON.stringify(f.defaultValue)}</span
+                >
               </li>
             {/each}
           </ul>
@@ -220,16 +209,16 @@
   </div>
 
   {#snippet foot()}
-    <span class="hint"><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-    <span class="hint"><kbd>↵</kbd> select</span>
-    <span class="hint"><kbd>esc</kbd> close</span>
+    <span class="hint"><Kbd>↑</Kbd><Kbd>↓</Kbd> navigate</span>
+    <span class="hint"><Kbd>↵</Kbd> select</span>
+    <span class="hint"><Kbd>esc</Kbd> close</span>
   {/snippet}
 </Modal>
 
 <style>
   /* Fill the (flex) modal body and cap the single grid row to that height, so
-     the only thing tall enough to scroll is the list inside .left — search bar
-     and detail pane stay fixed by sitting outside that scroller. */
+     the only thing tall enough to scroll is the list inside .left — the search
+     bar and detail pane stay fixed by sitting outside that scroller. */
   .cols {
     display: grid;
     grid-template-columns: 1fr 280px;
@@ -242,35 +231,6 @@
     flex-direction: column;
     min-height: 0;
     border-right: 1px solid var(--border);
-  }
-  .search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-2);
-    flex-shrink: 0;
-  }
-  .search input {
-    flex: 1;
-    border: 0;
-    background: transparent;
-    font: inherit;
-    font-size: 13px;
-    outline: 0;
-    color: var(--text-1);
-  }
-  kbd {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-2);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-bottom-width: 1.5px;
-    border-radius: 4px;
-    padding: 1px 5px;
-    line-height: 1;
   }
 
   .list {
@@ -311,17 +271,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .badge.site {
-    display: inline-flex;
-    align-items: center;
-    font-size: 10px;
-    color: var(--site-tag);
-    background: var(--site-bg);
-    border: 1px solid var(--site-bd);
-    padding: 1px 6px;
-    border-radius: 999px;
-    flex-shrink: 0;
   }
   .empty {
     padding: 16px;

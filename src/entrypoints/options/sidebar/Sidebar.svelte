@@ -1,54 +1,29 @@
 <script lang="ts">
-  import { Globe, GripVertical, Plus, Settings } from "@lucide/svelte/icons";
+  import { GripVertical, Plus, Settings } from "@lucide/svelte/icons";
   import { type ScopeId, scopes } from "@/lib/scopes";
-  import { siteBadge } from "../lib/display";
-  import SortableList from "../ui/SortableList.svelte";
-
-  type SidebarView = "edit" | "preferences";
-
-  type SiteEntry = {
-    id: ScopeId;
-    label: string;
-    badge: ReturnType<typeof siteBadge>;
-    active: boolean;
-  };
+  import { onActivate } from "@/lib/ui/a11y";
+  import ScopeAvatar from "@/lib/ui/ScopeAvatar.svelte";
+  import SortableList from "@/lib/ui/SortableList.svelte";
+  import { siteBadge } from "../display";
+  import { store } from "../store.svelte";
 
   interface Props {
-    selectedScope: ScopeId;
-    view: SidebarView;
-    bindingCounts: Record<string, number>;
-    conflictCounts: Record<string, number>;
-    siteOrder: ScopeId[];
-    onSelectScope: (scope: ScopeId) => void;
-    onReorderSites: (next: ScopeId[]) => void;
     onShowAddSite: () => void;
-    onShowPreferences: () => void;
   }
 
-  let {
-    selectedScope,
-    view,
-    bindingCounts,
-    conflictCounts,
-    siteOrder,
-    onSelectScope,
-    onReorderSites,
-    onShowAddSite,
-    onShowPreferences,
-  }: Props = $props();
+  let { onShowAddSite }: Props = $props();
 
-  const sites = $derived<SiteEntry[]>(
-    siteOrder.map((id) => ({
+  const sites = $derived(
+    store.siteOrder.map((id) => ({
       id,
       label: scopes[id].label,
       badge: siteBadge(id),
-      active: view === "edit" && selectedScope === id,
     })),
   );
 
-  const globalIsActive = $derived(
-    view === "edit" && selectedScope === "global",
-  );
+  function isActive(scope: ScopeId): boolean {
+    return store.view === "edit" && store.selectedScope === scope;
+  }
 </script>
 
 <aside class="sidebar">
@@ -58,10 +33,10 @@
     <button
       type="button"
       class="prefs"
-      class:active={view === "preferences"}
+      class:active={store.view === "preferences"}
       title="Preferences"
       aria-label="Preferences"
-      onclick={onShowPreferences}
+      onclick={() => store.showPreferences()}
     >
       <Settings size={14} />
     </button>
@@ -71,18 +46,18 @@
     <button
       type="button"
       class="item global-item"
-      class:active={globalIsActive}
-      onclick={() => onSelectScope("global")}
+      class:active={isActive("global")}
+      onclick={() => store.selectScope("global")}
     >
-      <span class="icon"><Globe size={14} /></span>
+      <ScopeAvatar badge={null} />
       <span class="label">Global</span>
-      {#if conflictCounts.global > 0}
+      {#if store.conflictCountFor("global") > 0}
         <span
           class="conflict-dot"
-          title={`${conflictCounts.global} conflicts`}
+          title={`${store.conflictCountFor("global")} conflicts`}
         ></span>
       {/if}
-      <span class="count">{bindingCounts.global ?? 0}</span>
+      <span class="count">{store.countFor("global")}</span>
     </button>
   </div>
 
@@ -107,23 +82,18 @@
       <SortableList
         items={sites}
         handle=".grip"
-        onReorder={(next) => onReorderSites(next.map((s) => s.id))}
+        onReorder={(next) => store.reorderSites(next.map((s) => s.id))}
         tag="nav"
         class="site-list"
       >
         {#snippet item(site)}
           <div
             class="item site"
-            class:active={site.active}
+            class:active={isActive(site.id)}
             role="button"
             tabindex="0"
-            onclick={() => onSelectScope(site.id)}
-            onkeydown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onSelectScope(site.id);
-              }
-            }}
+            onclick={() => store.selectScope(site.id)}
+            onkeydown={onActivate(() => store.selectScope(site.id))}
           >
             <span
               class="grip"
@@ -133,21 +103,15 @@
             >
               <GripVertical size={12} />
             </span>
-            {#if site.badge}
-              <span class="fav" style="background: {site.badge.color}">
-                {site.badge.initials}
-              </span>
-            {:else}
-              <span class="icon"><Globe size={12} /></span>
-            {/if}
+            <ScopeAvatar badge={site.badge} />
             <span class="label">{site.label}</span>
-            {#if conflictCounts[site.id] > 0}
+            {#if store.conflictCountFor(site.id) > 0}
               <span
                 class="conflict-dot"
-                title={`${conflictCounts[site.id]} conflicts`}
+                title={`${store.conflictCountFor(site.id)} conflicts`}
               ></span>
             {/if}
-            <span class="count">{bindingCounts[site.id] ?? 0}</span>
+            <span class="count">{store.countFor(site.id)}</span>
           </div>
         {/snippet}
       </SortableList>
@@ -156,9 +120,9 @@
 </aside>
 
 <style>
-  /* Floats on the canvas with no surface fill or right border — feels like
-       a Notion-style nav rather than a chrome rail. Sticky so it stays put
-       while the bindings list scrolls. */
+  /* Floats on the canvas with no surface fill or right border — feels like a
+     Notion-style nav rather than a chrome rail. Sticky so it stays put while
+     the bindings list scrolls. */
   .sidebar {
     display: flex;
     flex-direction: column;
@@ -312,26 +276,6 @@
     cursor: grabbing;
   }
 
-  .icon {
-    width: 16px;
-    height: 16px;
-    display: grid;
-    place-items: center;
-    color: var(--text-2);
-    flex-shrink: 0;
-  }
-  .fav {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 700;
-    display: grid;
-    place-items: center;
-    color: #fff;
-    flex-shrink: 0;
-    font-family: var(--font-mono);
-  }
   .label {
     flex: 1;
     min-width: 0;
@@ -359,8 +303,8 @@
     background: var(--danger);
   }
 
-  /* Scoped to :global because the class hops through SortableList's element
-       and would otherwise lose its hash. The selector is unique to this app. */
+  /* Scoped to :global because the class hops through SortableList's element and
+     would otherwise lose its hash. The selector is unique to this app. */
   :global(.site-list) {
     display: flex;
     flex-direction: column;

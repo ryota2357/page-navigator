@@ -1,26 +1,33 @@
 <script lang="ts">
   import { Download, Trash2, Upload } from "@lucide/svelte/icons";
-  import { type Settings, settingsSchema } from "@/lib/storage";
+  import { settingsSchema } from "@/lib/storage";
+  import Segmented from "@/lib/ui/Segmented.svelte";
+  import { store } from "../store.svelte";
   import SequenceTimeoutPreview from "./SequenceTimeoutPreview.svelte";
 
   interface Props {
-    settings: Settings;
-    onChange: (patch: Partial<Settings>) => void;
     onShowImport: () => void;
     onShowExport: () => void;
   }
 
-  let { settings, onChange, onShowImport, onShowExport }: Props = $props();
+  let { onShowImport, onShowExport }: Props = $props();
+
+  const settings = $derived(store.settings);
+
+  const themeOptions = settingsSchema.theme.options.map((opt) => ({
+    value: opt,
+    label: opt[0].toUpperCase() + opt.slice(1),
+  }));
 
   function onTimeoutChange(raw: string) {
     const n = Number(raw);
     if (Number.isNaN(n)) return;
-    onChange({ sequenceTimeoutMs: n });
+    store.updateSettings({ sequenceTimeoutMs: n });
   }
 
   // Disabled-pages is UI-only for now — kept in local state so the section
-  // exercises the layout (add / list / remove) without a storage entry to
-  // back it. Wire to a real Settings field when the feature lands.
+  // exercises the layout (add / list / remove) without a storage entry to back
+  // it. Wire to a real Settings field when the feature lands.
   let disabledPages = $state<string[]>([]);
   let draft = $state("");
 
@@ -53,19 +60,12 @@
             system.
           </div>
         </div>
-        <div class="seg" role="group" aria-label="Theme">
-          {#each settingsSchema.theme.options as opt (opt)}
-            <button
-              type="button"
-              class="seg-btn"
-              class:active={settings.theme === opt}
-              aria-pressed={settings.theme === opt}
-              onclick={() => onChange({ theme: opt })}
-            >
-              {opt[0].toUpperCase() + opt.slice(1)}
-            </button>
-          {/each}
-        </div>
+        <Segmented
+          options={themeOptions}
+          value={settings.theme}
+          ariaLabel="Theme"
+          onChange={(theme) => store.updateSettings({ theme })}
+        />
       </div>
     </section>
 
@@ -76,7 +76,8 @@
           <div class="desc">
             How long to wait for the next key in a multi-key sequence (e.g.
             <code>g g</code>). Clamped to
-            {settingsSchema.sequenceTimeoutMs.min}–{settingsSchema.sequenceTimeoutMs.max}
+            {settingsSchema.sequenceTimeoutMs.min}–{settingsSchema
+              .sequenceTimeoutMs.max}
             ms.
           </div>
         </div>
@@ -87,8 +88,7 @@
             max={settingsSchema.sequenceTimeoutMs.max}
             step="50"
             value={settings.sequenceTimeoutMs}
-            onchange={(e) =>
-              onTimeoutChange((e.currentTarget as HTMLInputElement).value)}
+            onchange={(e) => onTimeoutChange(e.currentTarget.value)}
           >
           <span class="unit">ms</span>
         </div>
@@ -113,7 +113,7 @@
             value={draft}
             placeholder="e.g. mail.google.com/*"
             oninput={(e) => {
-              draft = (e.currentTarget as HTMLInputElement).value;
+              draft = e.currentTarget.value;
             }}
             onkeydown={(e) => {
               if (e.key === "Enter") {
@@ -269,40 +269,6 @@
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--text-3);
-  }
-
-  .seg {
-    display: inline-flex;
-    flex-shrink: 0;
-    border: 1px solid var(--border-input);
-    border-radius: var(--r-sm);
-    background: var(--surface);
-    overflow: hidden;
-  }
-  .seg-btn {
-    appearance: none;
-    border: 0;
-    border-left: 1px solid var(--border-input);
-    height: 30px;
-    padding: 0 14px;
-    background: transparent;
-    font: inherit;
-    font-size: 12.5px;
-    color: var(--text-2);
-    cursor: default;
-  }
-  .seg-btn:first-child {
-    border-left: 0;
-  }
-  .seg-btn:hover {
-    background: var(--hover);
-  }
-  .seg-btn.active {
-    background: var(--accent);
-    color: var(--accent-fg);
-  }
-  .seg-btn.active:hover {
-    background: var(--accent-hover);
   }
 
   .pattern-input {

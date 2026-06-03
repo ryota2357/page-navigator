@@ -2,6 +2,7 @@ export {
   type Binding,
   bindingsItem,
 } from "./bindings";
+export { type ReactiveStore, reactiveStore } from "./reactive.svelte";
 export {
   type Settings,
   settingsItem,

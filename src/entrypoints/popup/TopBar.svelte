@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Bolt, Monitor, Moon, Sun } from "@lucide/svelte/icons";
   import type { Settings } from "@/lib/storage";
-  import IconButton from "./IconButton.svelte";
+  import IconButton from "@/lib/ui/IconButton.svelte";
 
   interface Props {
     theme: Settings["theme"];

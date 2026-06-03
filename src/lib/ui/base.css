@@ -1,0 +1,29 @@
+/* Shared reset + base typography for the extension's HTML pages (options,
+   popup). Import after theme.css so the tokens it reads are defined. */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-1);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font: inherit;
+}
+
+::selection {
+  background: var(--selection);
+}

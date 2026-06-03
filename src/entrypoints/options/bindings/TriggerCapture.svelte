@@ -2,15 +2,17 @@
   import { ArrowLeft, Check, Disc, Info, Keyboard } from "@lucide/svelte/icons";
   import {
     encodeKeyToken,
+    formatKeyToken,
     isImeComposing,
     isModifierKey,
     type KeyToken,
     type Trigger,
   } from "@/lib/keys";
-  import { formatKeyToken } from "../lib/display";
-  import Button from "../ui/Button.svelte";
-  import Modal from "../ui/Modal.svelte";
-  import Toggle from "../ui/Toggle.svelte";
+  import Button from "@/lib/ui/Button.svelte";
+  import Kbd from "@/lib/ui/Kbd.svelte";
+  import KeyCap from "@/lib/ui/KeyCap.svelte";
+  import Modal from "@/lib/ui/Modal.svelte";
+  import Toggle from "@/lib/ui/Toggle.svelte";
 
   interface Props {
     onCancel: () => void;
@@ -21,8 +23,8 @@
 
   let sequence = $state<KeyToken[]>([]);
   let mods = $state({ ctrl: false, shift: false, alt: false, meta: false });
-  // When OFF, bare Enter/Esc/Backspace drive Confirm/Cancel/Undo. When ON,
-  // they are captured as binding tokens like any other key.
+  // When OFF, bare Enter/Esc/Backspace drive Confirm/Cancel/Undo. When ON, they
+  // are captured as binding tokens like any other key.
   let bindReserved = $state(false);
 
   // Window-level capture-phase listeners so every key (including Tab, Enter,
@@ -122,9 +124,12 @@
       {:else}
         <div class="seq">
           {#each sequence as token, i (i)}
-            <span class="tok" class:flash={i === sequence.length - 1}>
+            <KeyCap
+              size="lg"
+              tone={i === sequence.length - 1 ? "flash" : "default"}
+            >
               {formatKeyToken(token)}
-            </span>
+            </KeyCap>
           {/each}
           <span class="caret" aria-hidden="true"></span>
         </div>
@@ -151,8 +156,8 @@
           <b>Capturing</b>
           ⏎ / ⎋ / ⌫ as keys — use the buttons to confirm or cancel.
         {:else}
-          <kbd>⏎</kbd>
-          confirms · <kbd>⎋</kbd> cancels · <kbd>⌫</kbd> undoes. Toggle to bind
+          <Kbd>⏎</Kbd>
+          confirms · <Kbd>⎋</Kbd> cancels · <Kbd>⌫</Kbd> undoes. Toggle to bind
           them instead.
         {/if}
       </span>
@@ -273,34 +278,6 @@
     gap: 6px;
     align-items: center;
   }
-  .tok {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 8px;
-    height: 30px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-bottom-width: 2px;
-    border-radius: 5px;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--text-1);
-  }
-  .tok.flash {
-    /* Brief "captured" pulse; reuses the warn highlight tones so it
-       adapts with the theme (amber on light, dim amber on dark). */
-    background: var(--warn-bg);
-    border-color: var(--warn-bd);
-    animation: tok-flash 0.28s ease-out;
-  }
-  @keyframes tok-flash {
-    from {
-      transform: translateY(-2px) scale(1.04);
-    }
-    to {
-      transform: translateY(0) scale(1);
-    }
-  }
   .caret {
     width: 2px;
     height: 22px;
@@ -374,15 +351,5 @@
   }
   .reserved-text b {
     font-weight: 600;
-  }
-  .reserved kbd {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    padding: 0 4px;
-    border-radius: 3px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text-2);
-    margin: 0 2px;
   }
 </style>

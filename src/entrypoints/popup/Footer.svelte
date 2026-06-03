@@ -1,7 +1,7 @@
 <script lang="ts">
   import { MessageSquareWarning } from "@lucide/svelte/icons";
+  import IconButton from "@/lib/ui/IconButton.svelte";
   import GitHubMark from "./GitHubMark.svelte";
-  import IconButton from "./IconButton.svelte";
 
   interface Props {
     // Resolved light/dark so the GitHub mark can pick its black/white variant.

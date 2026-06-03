@@ -1,11 +1,12 @@
 <script lang="ts">
   import {
     encodeKeyToken,
+    formatKeyToken,
     isImeComposing,
     isModifierKey,
     type KeyToken,
   } from "@/lib/keys";
-  import { formatKeyToken } from "../lib/display";
+  import KeyCap from "@/lib/ui/KeyCap.svelte";
 
   interface Props {
     timeoutMs: number;
@@ -114,7 +115,7 @@
   {#if strokes.length > 0}
     <div class="timeline">
       {#each strokes as stroke, i (i)}
-        <span class="token">{formatKeyToken(stroke.token)}</span>
+        <KeyCap size="md">{formatKeyToken(stroke.token)}</KeyCap>
         {#if strokes[i + 1]}
           {@const gapMs = Math.round(strokes[i + 1].at - stroke.at)}
           <span class="gap" title={`${gapMs} ms`}>
@@ -196,19 +197,6 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-  }
-  .token {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 8px;
-    height: 26px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-bottom-width: 2px;
-    border-radius: 5px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-1);
   }
   .gap {
     display: inline-flex;
