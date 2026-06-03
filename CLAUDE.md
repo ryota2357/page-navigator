@@ -19,7 +19,7 @@ pnpm format              # Biome format --write
 
 ## Architecture
 
-Two runtime contexts + an options UI, sharing `src/lib/`. Path alias `@/` → `src/`.
+Two runtime contexts (content, background) + two HTML pages (options, popup), all sharing `src/lib/`. Path alias `@/` → `src/`.
 
 **Keystroke pipeline** — `src/entrypoints/content.ts` (ISOLATED world, `<all_urls>`): resolves active scopes for the URL (fixed at init, no SPA re-scoping), loads/`watch`es bindings + settings, feeds capture-phase keydowns into a `Dispatcher`. The dispatcher (`src/lib/dispatcher/`) walks a `KeyToken` trie; `feed` returns `fired`/`consumed`/`passed` (only `passed` reaches the page). Multi-key disambiguation uses a timeout; same-trigger conflicts within a scope refuse to fire.
 
@@ -31,7 +31,11 @@ Two runtime contexts + an options UI, sharing `src/lib/`. Path alias `@/` → `s
 
 **Storage** (`src/lib/storage/`) — `defineStorageItem` wraps WXT storage with validate-and-repair, caching, and watcher fan-out. Items: `local:bindings`, `local:settings`.
 
-**Options UI** (`src/entrypoints/options/`) — Svelte 5 runes. Edits the same storage items the content script watches, so changes apply live. `lib/conflicts.ts` is display-only conflict detection (distinct from the dispatcher's runtime conflicts).
+**Shared UI** (`src/lib/ui/`) — Svelte primitives (Modal, SortableList, KeyCap, SearchInput, …) plus `theme.svelte.ts` (color-scheme) used by both pages; a change here can hit options and popup.
+
+**Options UI** (`src/entrypoints/options/`) — Svelte 5 runes; `store.svelte.ts` holds the page state components read directly. Edits the same storage items the content script watches, so changes apply live. `conflicts.ts` is display-only conflict detection (distinct from the dispatcher's runtime conflicts).
+
+**Popup UI** (`src/entrypoints/popup/`) — the toolbar popup: global enable + theme toggle and the active-scope readout for the current tab.
 
 ## Testing
 
@@ -40,5 +44,3 @@ Vitest + happy-dom, colocated `*.test.ts`. The non-obvious suite is the **select
 ## Conventions
 
 - Runtime shape-checking of stored/imported data uses `@core/unknownutil` (`is.*`).
-- Biome formats/lints (config in `biome.json`).
-- Comments here are dense on the "why" of non-obvious decisions — match that and keep them in sync.
