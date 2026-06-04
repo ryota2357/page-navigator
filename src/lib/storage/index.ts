@@ -8,3 +8,9 @@ export {
   settingsItem,
   settingsSchema,
 } from "./settings";
+export {
+  type DeserializeResult,
+  deserializeConfig,
+  serializeConfig,
+  type TransferConfig,
+} from "./transfer";

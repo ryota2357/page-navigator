@@ -35,6 +35,28 @@ export const settingsSchema = {
   },
 } as const;
 
+export function isValidSettingValue<K extends keyof Settings>(
+  key: K,
+  value: unknown,
+): value is Settings[K] {
+  const schema = settingsSchema[key];
+  switch (schema.type) {
+    case "number":
+      return (
+        is.Number(value) &&
+        Number.isFinite(value) &&
+        schema.min <= value &&
+        value <= schema.max
+      );
+    case "boolean":
+      return is.Boolean(value);
+    case "select":
+      return is.String(value) && schema.options.some((v) => v === value);
+    default:
+      return schema satisfies never;
+  }
+}
+
 const defaultSettings = Object.fromEntries(
   Object.entries(settingsSchema).map(([key, schema]) => [key, schema.default]),
 ) as Settings;
@@ -60,37 +82,12 @@ export const settingsItem = defineStorageItem<Settings>("local:settings", {
         changed = true;
         continue;
       }
-      const schema = settingsSchema[key];
       const value = raw[key];
-      switch (schema.type) {
-        case "number":
-          if (is.Number(value) && Number.isFinite(value)) {
-            if (schema.min <= value && value <= schema.max) {
-              valid[key] = value;
-              break;
-            }
-          }
-          valid[key] = schema.default;
-          changed = true;
-          break;
-        case "boolean":
-          if (is.Boolean(value)) {
-            valid[key] = value;
-            break;
-          }
-          valid[key] = schema.default;
-          changed = true;
-          break;
-        case "select":
-          if (is.String(value) && schema.options.some((v) => v === value)) {
-            valid[key] = value;
-            break;
-          }
-          valid[key] = schema.default;
-          changed = true;
-          break;
-        default:
-          schema satisfies never;
+      if (isValidSettingValue(key, value)) {
+        valid[key] = value;
+      } else {
+        valid[key] = settingsSchema[key].default;
+        changed = true;
       }
     }
     return changed ? { ok: false, fallback: valid as Settings } : { ok: true };

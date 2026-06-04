@@ -5,7 +5,7 @@ import { log } from "../log";
 import { isScopeId } from "../scopes";
 import { defineStorageItem } from "./storage";
 
-const isBinding = is.ObjectOf({
+export const isBinding = is.ObjectOf({
   id: is.String,
   scope: isScopeId,
   triggers: is.ArrayOf(isTrigger),
