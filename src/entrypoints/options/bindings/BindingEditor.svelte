@@ -6,7 +6,7 @@
   import type { Action, ActionId } from "@/lib/action";
   import { formatTrigger, type Trigger } from "@/lib/keys";
   import type { ScopeId } from "@/lib/scopes";
-  import type { Binding } from "@/lib/storage";
+  import type { Binding, BindingId } from "@/lib/storage";
   import Button from "@/lib/ui/Button.svelte";
   import KeyCap from "@/lib/ui/KeyCap.svelte";
   import ScopeTag from "@/lib/ui/ScopeTag.svelte";
@@ -24,7 +24,7 @@
     binding: Binding | null;
     actions: Record<ActionId, Action>;
     scopeId: ScopeId;
-    rowId: string;
+    rowId: BindingId;
     conflicts: Set<string>;
     onCommit: (next: Binding) => void;
     onCancel: () => void;

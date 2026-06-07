@@ -1,6 +1,8 @@
 export {
   type Binding,
+  type BindingId,
   bindingsItem,
+  newBindingId,
 } from "./bindings";
 export { type ReactiveStore, reactiveStore } from "./reactive.svelte";
 export {

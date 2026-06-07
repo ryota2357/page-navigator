@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Action, ActionId } from "@/lib/action";
 import { parse, parseTrigger } from "@/lib/keys";
 import { scopes } from "@/lib/scopes";
-import type { Binding } from "@/lib/storage";
+import type { Binding, BindingId } from "@/lib/storage";
 import { Dispatcher } from "./dispatcher";
 import { compileTrie } from "./trie";
 
@@ -14,7 +14,7 @@ const ACTIONS: Record<ActionId, Action> = Object.fromEntries(
 // tests speak the same canonical form the dispatcher does.
 function bindScrollDown(id: string, triggers: string[][]): Binding {
   return {
-    id,
+    id: id as BindingId,
     scope: "global",
     triggers: triggers.map(parseTrigger),
     actionId: "global.scrollDown",

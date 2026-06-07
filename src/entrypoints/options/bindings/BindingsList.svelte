@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Action, ActionId } from "@/lib/action";
   import type { ScopeId } from "@/lib/scopes";
-  import type { Binding } from "@/lib/storage";
+  import type { Binding, BindingId } from "@/lib/storage";
   import SortableList from "@/lib/ui/SortableList.svelte";
   import BindingEditor from "./BindingEditor.svelte";
   import BindingRow from "./BindingRow.svelte";
@@ -13,7 +13,7 @@
     bindings: Binding[];
     actions: Record<ActionId, Action>;
     scopeId: ScopeId;
-    newRowId: string | null;
+    newRowId: BindingId | null;
     editingId: string | null;
     conflicts: Set<string>;
     onStartEdit: (id: string) => void;

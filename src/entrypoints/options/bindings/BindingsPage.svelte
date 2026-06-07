@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Plus } from "@lucide/svelte/icons";
   import { scopes } from "@/lib/scopes";
-  import type { Binding } from "@/lib/storage";
+  import { type Binding, type BindingId, newBindingId } from "@/lib/storage";
   import ScopeAvatar from "@/lib/ui/ScopeAvatar.svelte";
   import SearchInput from "@/lib/ui/SearchInput.svelte";
   import { findConflicts, serializeTrigger } from "../conflicts";
@@ -22,7 +22,7 @@
 
   // A non-null `newRowId` means a fresh editable row is visible. The id is fixed
   // up-front so storage can adopt the row on commit unchanged.
-  let newRowId = $state<string | null>(null);
+  let newRowId = $state<BindingId | null>(null);
   let editingId = $state<string | null>(null);
   let query = $state("");
 
@@ -51,7 +51,7 @@
   const isEmpty = $derived(bindings.length === 0 && newRowId === null);
 
   function startAdd() {
-    if (newRowId === null) newRowId = crypto.randomUUID();
+    if (newRowId === null) newRowId = newBindingId();
     editingId = newRowId;
   }
 

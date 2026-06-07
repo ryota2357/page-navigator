@@ -5,8 +5,19 @@ import { log } from "../log";
 import { isScopeId } from "../scopes";
 import { defineStorageItem } from "./storage";
 
+declare const bindingIdBrand: unique symbol;
+// The value is opaque (currently a UUIDv4) — nothing downstream may depend on its format, so the runtime check stays a bare string.
+export type BindingId = string & { readonly [bindingIdBrand]: true };
+
+export const isBindingId = (value: unknown): value is BindingId =>
+  is.String(value);
+
+export function newBindingId(): BindingId {
+  return crypto.randomUUID() as BindingId;
+}
+
 export const isBinding = is.ObjectOf({
-  id: is.String,
+  id: isBindingId,
   scope: isScopeId,
   triggers: is.ArrayOf(isTrigger),
   actionId: isActionId,

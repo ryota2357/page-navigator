@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseTrigger } from "@/lib/keys";
 import type { ScopeId } from "@/lib/scopes";
-import type { Binding } from "@/lib/storage";
+import type { Binding, BindingId } from "@/lib/storage";
 import { activeBindings } from "./active";
 
 // `triggers` arrive as plain strings; `parseTrigger` mints the branded
@@ -13,7 +13,7 @@ function bind(
   opts: Partial<Binding> = {},
 ): Binding {
   return {
-    id,
+    id: id as BindingId,
     scope,
     triggers: triggers.map(parseTrigger),
     actionId: opts.actionId ?? "global.scrollDown",
