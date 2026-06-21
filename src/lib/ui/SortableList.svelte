@@ -1,4 +1,16 @@
-<script lang="ts" generics="T extends { id: string }">
+<script module lang="ts">
+  // WORKAROUND: written inline as `generics="T extends { id: string }"`, Biome's
+  // experimental Svelte parser misreads the braces as a template expression and
+  // fails to parse the whole file, so the constraint lives in a named type here.
+  // Revert to the inline object type once the upstream parser bug is fixed. The
+  // tracking issue is filed against Vue but is the shared HTML-family parser (the
+  // Svelte report #9449 was closed as a duplicate of it):
+  // https://github.com/biomejs/biome/issues/9155
+  // biome-ignore lint/correctness/noUnusedVariables: referenced only from the `generics` attribute, which Biome doesn't parse
+  type HasId = { id: string };
+</script>
+
+<script lang="ts" generics="T extends HasId">
   import Sortable, { type SortableEvent } from "sortablejs";
   import type { Snippet } from "svelte";
 
