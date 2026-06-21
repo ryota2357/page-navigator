@@ -36,8 +36,8 @@
   },
   "dependencies": {
     "@core/unknownutil": "jsr:4.4.0-pre.1",
-    "@lucide/svelte": "1.16.0",
-    "@webext-core/messaging": "3.0.1",
+    "@lucide/svelte": "1.21.0",
+    "@webext-core/messaging": "3.0.2",
     "sortablejs": "1.15.7"
   }
 }
