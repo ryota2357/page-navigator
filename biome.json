@@ -10,8 +10,7 @@
       "**",
       "!**/package.json",
       "!**/pnpm-lock.yaml",
-      "!.output",
-      "!.wxt",
+      "!**/*.svg",
       "!.claude/settings.local.json",
       "!**/__fixtures__"
     ]
@@ -26,7 +25,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "preset": "recommended"
     }
   },
   "javascript": {
@@ -60,11 +59,16 @@
       "includes": ["**/*.svelte"],
       "linter": {
         "rules": {
-          "suspicious": {
-            "noAssignInExpressions": "off"
-          },
           "correctness": {
             "noUnusedFunctionParameters": "off"
+          },
+          "a11y": {
+            "noNoninteractiveElementToInteractiveRole": "off",
+            "noNoninteractiveTabindex": "off",
+            "noStaticElementInteractions": "off",
+            "useKeyWithClickEvents": "off",
+            "useSemanticElements": "off",
+            "useValidAriaValues": "off"
           }
         }
       }
