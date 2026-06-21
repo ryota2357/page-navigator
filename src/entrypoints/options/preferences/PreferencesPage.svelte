@@ -157,8 +157,8 @@
           <div class="title">Backup</div>
           <div class="desc">
             Export the full binding set as JSON for backup or sharing, or import
-            a previously-exported file. Import replaces the current binding set;
-            preview the diff before confirming.
+            a previously-exported file. Import lets you pick which scopes to
+            replace with the file's bindings, and whether to apply its settings.
           </div>
         </div>
         <div class="actions">

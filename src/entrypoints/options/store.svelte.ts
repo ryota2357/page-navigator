@@ -3,9 +3,11 @@ import { type ScopeId, scopeIds, scopes } from "@/lib/scopes";
 import {
   type Binding,
   bindingsItem,
+  newBindingId,
   reactiveStore,
   type Settings,
   settingsItem,
+  type TransferConfig,
 } from "@/lib/storage";
 import { findConflicts } from "./conflicts";
 
@@ -101,6 +103,29 @@ class OptionsStore {
 
   updateSettings(patch: Partial<Settings>): Promise<void> {
     return this.#settings.set({ ...this.settings, ...patch });
+  }
+
+  // Replace-import: only the chosen scopes are overwritten with the file's
+  // bindings (re-keyed with fresh ids); unchosen scopes keep their current
+  // bindings. `enabled` is never in the file, so it survives a settings import.
+  async importConfig(
+    config: TransferConfig,
+    replaceScopes: Set<ScopeId>,
+    includeSettings: boolean,
+  ): Promise<void> {
+    const kept = this.bindings.filter((b) => !replaceScopes.has(b.scope));
+    const incoming: Binding[] = config.bindings
+      .filter((b) => replaceScopes.has(b.scope))
+      .map((b) => ({ ...b, id: newBindingId() }));
+    await this.#bindings.set([...kept, ...incoming]);
+    if (includeSettings) {
+      await this.#settings.set({ ...this.settings, ...config.settings });
+    }
+    // Re-derive the sidebar from the new binding set, as init() does.
+    const configured = new Set(this.bindings.map((b) => b.scope));
+    this.siteOrder = scopeIds.filter(
+      (id) => id !== "global" && configured.has(id),
+    );
   }
 }
 

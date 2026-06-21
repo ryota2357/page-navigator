@@ -1,41 +1,96 @@
 <script lang="ts">
-  import { Upload } from "@lucide/svelte/icons";
+  import { Download, FileJson } from "@lucide/svelte/icons";
+  import { type ScopeId, scopeIds, scopes } from "@/lib/scopes";
+  import { serializeConfig } from "@/lib/storage";
   import Button from "@/lib/ui/Button.svelte";
   import Modal from "@/lib/ui/Modal.svelte";
+  import { store } from "../store.svelte";
 
   interface Props {
     onClose: () => void;
   }
 
   let { onClose }: Props = $props();
+
+  const fileName = "page-navigator-config.json";
+
+  // Per-scope binding counts, only scopes that actually have bindings.
+  const scopeRows = $derived.by(() => {
+    const counts = new Map<ScopeId, number>();
+    for (const b of store.bindings) {
+      counts.set(b.scope, (counts.get(b.scope) ?? 0) + 1);
+    }
+    return scopeIds
+      .filter((id) => counts.has(id))
+      .map((id) => ({
+        id,
+        label: scopes[id].label,
+        count: counts.get(id) ?? 0,
+      }));
+  });
+  const bindingCount = $derived(store.bindings.length);
+
+  function download() {
+    const text = serializeConfig(store.bindings, store.settings);
+    const url = URL.createObjectURL(
+      new Blob([text], { type: "application/json" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 </script>
 
 <Modal
   ariaLabel="Export"
   title="Export settings"
-  subtitle="Write all scopes to a single JSON file."
-  width={560}
+  subtitle="Save every scope and your settings to a JSON file."
+  width={520}
   {onClose}
 >
   <div class="body">
-    <div class="dropzone">
-      <Upload size={18} />
-      <div class="file">
-        <b>page-navigator-config.json</b>
-        <span>All scopes · all bindings</span>
-      </div>
+    <div class="head">
+      <span class="title">Included</span>
+      <span class="count">
+        {bindingCount}
+        {bindingCount === 1 ? "binding" : "bindings"}
+      </span>
     </div>
-    <div class="note">
-      Import lets you pick scopes individually, so a per-scope export is
-      unnecessary here.
+
+    {#each scopeRows as row (row.id)}
+      <div class="row">
+        <span class="nm">{row.label}</span>
+        <span class="cnt">
+          {row.count}
+          {row.count === 1 ? "binding" : "bindings"}
+        </span>
+      </div>
+    {/each}
+
+    <div class="row settings-row">
+      <span class="nm">Settings</span>
+      <span class="cnt">theme, sequence timeout</span>
+    </div>
+
+    <div class="file-line">
+      <FileJson size={14} />
+      <span>{fileName}</span>
     </div>
   </div>
 
   {#snippet foot({ close })}
     <span class="spacer"></span>
     <Button variant="ghost" onclick={close}>Cancel</Button>
-    <Button variant="primary" disabled>
-      <Upload size={12} />
+    <Button
+      variant="primary"
+      onclick={() => {
+        download();
+        close();
+      }}
+    >
+      <Download size={12} />
       Download
     </Button>
   {/snippet}
@@ -45,40 +100,54 @@
   .body {
     padding: 14px 18px;
   }
-  .dropzone {
-    border: 1.5px solid var(--border-strong);
-    border-radius: var(--r-md);
-    padding: 14px;
-    background: var(--canvas);
-    font-size: 12.5px;
-    color: var(--text-2);
+  .head {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 0 0 6px;
   }
-  .file {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    gap: 1px;
+  .title {
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 600;
   }
-  .file b {
-    color: var(--text-1);
-    font-family: var(--font-mono);
-    font-weight: 500;
-    font-size: 12.5px;
-  }
-  .file span {
+  .count {
     font-size: 11.5px;
     color: var(--text-3);
   }
-  .note {
-    background: var(--subtle);
-    padding: 10px 12px;
-    border-radius: var(--r-md);
+  .row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .row:last-of-type {
+    border-bottom: 0;
+  }
+  .settings-row {
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .nm {
+    font-size: 13px;
+    color: var(--text-1);
+  }
+  .cnt {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
+  }
+  .file-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    color: var(--text-3);
+    font-family: var(--font-mono);
     font-size: 11.5px;
-    color: var(--text-2);
-    line-height: 1.5;
-    margin-top: 14px;
   }
 </style>
