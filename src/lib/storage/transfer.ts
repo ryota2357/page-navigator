@@ -92,10 +92,10 @@ function deserializeV1(raw: Record<PropertyKey, unknown>): DeserializeResult {
   }
 
   const valid: Record<string, unknown> = {};
-  for (const key of Object.keys(settingsSchema)) {
-    if (!isKeyOf(key, settingsSchema)) {
-      return { ok: false, message: `Missing setting: ${key}` };
-    }
+  for (const key of Object.keys(
+    settingsSchema,
+  ) as (keyof typeof settingsSchema)[]) {
+    if (key === "enabled") continue;
     const value = raw.settings[key];
     if (!isValidSettingValue(key, value)) {
       return { ok: false, message: `Invalid value for setting "${key}"` };
@@ -105,8 +105,4 @@ function deserializeV1(raw: Record<PropertyKey, unknown>): DeserializeResult {
   const settings = valid as Omit<Settings, "enabled">;
 
   return { ok: true, config: { version: 1, bindings, settings } };
-}
-
-function isKeyOf<T extends object>(key: PropertyKey, obj: T): key is keyof T {
-  return key in obj;
 }
