@@ -1,7 +1,8 @@
+import type { Runtime, Tabs } from "webextension-polyfill";
 import { browser } from "wxt/browser";
 import { onMessage } from "./messaging";
 
-function getSenderTab(sender: Browser.runtime.MessageSender): Browser.tabs.Tab {
+function getSenderTab(sender: Runtime.MessageSender): Tabs.Tab {
   const tab = sender.tab;
   if (tab === undefined) {
     throw new Error("sender tab info missing");
@@ -37,7 +38,7 @@ export function registerBackgroundMessageHandlers(): void {
 
   onMessage("switchTab", async ({ data, sender }) => {
     const tab = getSenderTab(sender);
-    if (!tab.id) return;
+    if (!tab.windowId) return;
     const tabs = await queryWindowTabs(tab.windowId);
     if (tabs.length === 0) throw new Error("no tabs");
     const activateTab = (tab: Browser.tabs.Tab) => {
@@ -104,7 +105,7 @@ export function registerBackgroundMessageHandlers(): void {
 
   onMessage("moveTab", async ({ data, sender }) => {
     const tab = getSenderTab(sender);
-    if (!tab.id) return;
+    if (!tab.id || !tab.windowId) return;
     const tabs = await queryWindowTabs(tab.windowId);
     const next = tab.index + data.offset;
     if (0 <= next && next < tabs.length) {
@@ -120,6 +121,7 @@ export function registerBackgroundMessageHandlers(): void {
 
   onMessage("closeTabs", async ({ data, sender }) => {
     const tab = getSenderTab(sender);
+    if (!tab.windowId) return;
     const tabs = await queryWindowTabs(tab.windowId);
     const includePinned = data.includePinned;
     let targetTabs: Browser.tabs.Tab[];
