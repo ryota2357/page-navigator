@@ -12,8 +12,8 @@ importers:
         specifier: jsr:4.4.0-pre.1
         version: '@jsr/core__unknownutil@4.4.0-pre.1'
       '@lucide/svelte':
-        specifier: 1.21.0
-        version: 1.21.0(svelte@5.56.3)
+        specifier: 1.22.0
+        version: 1.22.0(svelte@5.56.3)
       '@webext-core/messaging':
         specifier: 3.0.2
         version: 3.0.2
@@ -361,8 +361,8 @@ packages:
   '@jsr/core__unknownutil@4.4.0-pre.1':
     resolution: {integrity: sha512-al13EQTUm6z9gn13y5PyADkln1ACmPC1X+j70zLLps/6rZ5i2NBWVZw8cuh+YHbxLXXRiytrbtHS3hLeXIQvzg==, tarball: https://npm.jsr.io/~/11/@jsr/core__unknownutil/4.4.0-pre.1.tgz}
 
-  '@lucide/svelte@1.21.0':
-    resolution: {integrity: sha512-MEv//A7Jv3kHukZowv/DWp1MAtUzJKYwtJsmnQ7X98lCgtac3z3NbaToDl3Q6jO3gS9sougFpcD+t+YuxOkRMw==}
+  '@lucide/svelte@1.22.0':
+    resolution: {integrity: sha512-eaNC3GGu9ma7mviB9vPL6OnawXqxdvRnoAQSq5l15mBlsuwD7kozZ7pzPXSlT6OwSl7hz4qTk+ZU3OEewwi5gQ==}
     peerDependencies:
       svelte: ^5
 
@@ -2270,7 +2270,7 @@ snapshots:
 
   '@jsr/core__unknownutil@4.4.0-pre.1': {}
 
-  '@lucide/svelte@1.21.0(svelte@5.56.3)':
+  '@lucide/svelte@1.22.0(svelte@5.56.3)':
     dependencies:
       svelte: 5.56.3
 
